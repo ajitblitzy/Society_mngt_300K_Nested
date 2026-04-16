@@ -212,7 +212,7 @@ All errors are returned in a consistent JSON structure:
 }
 ```
 
-In development mode (`NODE_ENV=development`), additional error details (stack trace) may be included for debugging purposes.
+In development mode, the original error message is preserved in the response. In production, server errors (5xx) return a generic "Internal Server Error" message to prevent information disclosure. Stack traces are always logged via Winston but are never included in the HTTP response body.
 
 ---
 
@@ -226,7 +226,7 @@ In development mode (`NODE_ENV=development`), additional error details (stack tr
 # Install PM2 globally (production servers)
 npm install pm2 -g
 
-# Start in development mode (single instance)
+# Start in development mode (cluster, all CPU cores)
 pm2 start ecosystem.config.js
 
 # Start in production mode (cluster mode, all CPU cores)
