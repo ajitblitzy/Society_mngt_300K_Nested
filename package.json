@@ -1,7 +1,7 @@
 {
   "name": "ajit-backprop-test",
   "version": "1.0.0",
-  "description": "Production-ready Node.js HTTP server built on the Express.js framework",
+  "description": "A production-ready Node.js HTTP server built on Express.js with comprehensive middleware, structured logging, environment configuration, and PM2 deployment support",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,9 +9,6 @@
     "pm2:start": "pm2 start ecosystem.config.js",
     "pm2:stop": "pm2 stop ecosystem.config.js",
     "pm2:logs": "pm2 logs"
-  },
-  "engines": {
-    "node": ">=20.0.0"
   },
   "keywords": [
     "express",
@@ -22,18 +19,21 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "compression": "1.8.1",
-    "cors": "2.8.6",
-    "dotenv": "17.4.2",
-    "express": "5.2.1",
-    "express-rate-limit": "8.3.2",
-    "helmet": "8.1.0",
-    "http-errors": "2.0.1",
-    "morgan": "1.10.1",
-    "winston": "3.19.0"
+    "compression": "^1.8.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
+    "helmet": "^8.1.0",
+    "http-errors": "^2.0.1",
+    "morgan": "^1.10.1",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
-    "nodemon": "3.1.9",
-    "pm2": "6.0.14"
+    "nodemon": "^3.1.9",
+    "pm2": "^6.0.14"
+  },
+  "engines": {
+    "node": ">= 20.0.0"
   }
 }
