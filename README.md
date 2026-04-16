@@ -160,7 +160,8 @@ The following HTTP endpoints are available:
 ```json
 {
   "status": "success",
-  "message": "Welcome to the Ajit-backprop-test API"
+  "message": "Welcome to the API",
+  "version": "1.0.0"
 }
 ```
 
@@ -172,9 +173,10 @@ The following HTTP endpoints are available:
   "data": {
     "name": "ajit-backprop-test",
     "version": "1.0.0",
-    "description": "A production-ready Node.js HTTP server built on Express.js",
+    "description": "Express.js API server",
     "nodeVersion": "v20.20.2",
-    "environment": "development"
+    "platform": "linux",
+    "uptime": 123.456
   }
 }
 ```
@@ -263,12 +265,12 @@ In production, PM2 runs the application in **cluster mode**, spawning one worker
 | Setting              | Development         | Production                      |
 |----------------------|---------------------|---------------------------------|
 | `exec_mode`          | `cluster`           | `cluster`                       |
-| `instances`          | `1`                 | `max` (all CPU cores)           |
+| `instances`          | `max` (all CPU cores) | `max` (all CPU cores)         |
 | `NODE_ENV`           | `development`       | `production`                    |
 | `PORT`               | `3000`              | `3000`                          |
 | `LOG_LEVEL`          | `debug`             | `info`                          |
 | `max_memory_restart` | `300M`              | `300M`                          |
-| `watch`              | `true`              | `false`                         |
+| `watch`              | `false`             | `false`                         |
 | `autorestart`        | `true`              | `true`                          |
 
 ### Log Files

@@ -32,6 +32,14 @@
 const logger = require('../utils/logger');
 
 // ---------------------------------------------------------------------------
+// Internal dependency — Centralized environment configuration.
+// Provides config.nodeEnv for environment-aware error message sanitization.
+// All environment variable access is routed through this module — NEVER
+// read process.env directly in application code.
+// ---------------------------------------------------------------------------
+const config = require('../config');
+
+// ---------------------------------------------------------------------------
 // Error Handler Middleware
 // ---------------------------------------------------------------------------
 
@@ -65,15 +73,16 @@ const errorHandler = (err, req, res, next) => {
   // ------------------------------------------------------------------
   // Step 2 — Determine the client-facing error message.
   //
-  // In production, server errors (status 500) MUST NOT expose internal
-  // details — replace with a generic message to protect against
-  // information disclosure vulnerabilities.
+  // In production, ALL server errors (5xx status codes) MUST NOT expose
+  // internal details — replace with a generic message to protect against
+  // information disclosure vulnerabilities. This covers 500, 502, 503,
+  // and any other server-class errors that may be introduced in future.
   //
   // In non-production environments, the original error message is
   // preserved for developer debugging convenience.
   // ------------------------------------------------------------------
   const message =
-    process.env.NODE_ENV === 'production' && statusCode === 500
+    config.nodeEnv === 'production' && statusCode >= 500
       ? 'Internal Server Error'
       : err.message || 'Internal Server Error';
 

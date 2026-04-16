@@ -178,6 +178,7 @@ const limiter = rateLimit({
   legacyHeaders: false,    // Disable the `X-RateLimit-*` headers
   message: {
     status: 'error',
+    statusCode: 429,
     message: 'Too many requests, please try again later.',
   },
 });

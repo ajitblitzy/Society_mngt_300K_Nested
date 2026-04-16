@@ -123,26 +123,10 @@ const logger = winston.createLogger({
 });
 
 // ---------------------------------------------------------------------------
-// 6. Stream interface — used by Morgan for HTTP request logging integration
-//    (consumed by src/middleware/requestLogger.js)
-// ---------------------------------------------------------------------------
-
-/**
- * Writable stream adapter for Morgan HTTP logger.
- *
- * Morgan writes each log line with a trailing newline; we trim it before
- * passing the message to Winston at the 'http' level so that log entries
- * remain clean and consistently formatted.
- *
- * @type {{ write: Function }}
- */
-logger.stream = {
-  write: (message) => {
-    logger.http(message.trim());
-  },
-};
-
-// ---------------------------------------------------------------------------
-// 7. Module export — singleton logger instance
+// 6. Module export — singleton logger instance
+//
+// NOTE: The Morgan-to-Winston stream bridge is defined in
+// src/middleware/requestLogger.js as a local stream object, keeping HTTP
+// request logging configuration co-located with the Morgan middleware setup.
 // ---------------------------------------------------------------------------
 module.exports = logger;
