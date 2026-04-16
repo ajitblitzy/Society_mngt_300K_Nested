@@ -1,28 +1,39 @@
-# Dependencies
+# =============================================
+# .gitignore — Node.js / Express.js Project
+# =============================================
+
+# ----- Dependencies -----
 node_modules/
 
-# Environment variables
+# ----- Environment Variables -----
+# .env contains secrets and must never be committed
 .env
+.env.local
+.env.*.local
+# NOTE: .env.example is NOT ignored — it serves as documentation
 
-# Logs
+# ----- Logs -----
 logs/
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# PM2
+# ----- PM2 -----
 .pm2/
-pm2-*.pid
 
-# OS files
+# ----- OS Files -----
 .DS_Store
 Thumbs.db
 
-# IDE
+# ----- Editor / IDE Files -----
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
 
-# Build output
+# ----- Coverage and Build -----
+coverage/
 dist/
-build/
+.nyc_output/
