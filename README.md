@@ -263,12 +263,12 @@ In production, PM2 runs the application in **cluster mode**, spawning one worker
 | Setting              | Development         | Production                      |
 |----------------------|---------------------|---------------------------------|
 | `exec_mode`          | `cluster`           | `cluster`                       |
-| `instances`          | `max`               | `max` (all CPU cores)           |
+| `instances`          | `1`                 | `max` (all CPU cores)           |
 | `NODE_ENV`           | `development`       | `production`                    |
 | `PORT`               | `3000`              | `3000`                          |
 | `LOG_LEVEL`          | `debug`             | `info`                          |
 | `max_memory_restart` | `300M`              | `300M`                          |
-| `watch`              | `false`             | `false`                         |
+| `watch`              | `true`              | `false`                         |
 | `autorestart`        | `true`              | `true`                          |
 
 ### Log Files
