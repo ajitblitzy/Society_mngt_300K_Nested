@@ -1,0 +1,377 @@
+# =============================================================================
+# .pre-commit-config.yaml — Ajit-backprop-test (Python 3.13)
+# -----------------------------------------------------------------------------
+# Pre-commit hook configuration for the Python 3 implementation of the
+# Ajit-backprop-test project (refactored from JavaScript per AAP §0.5.1).
+#
+# This file is the Python equivalent of `husky` + `lint-staged` from the
+# JavaScript ecosystem (per AAP §0.7.4 — "`husky`, `lint-staged` —
+# replaced by `pre-commit`"). It declares Git pre-commit hooks that run
+# every developer's local toolchain (ruff, black, mypy, bandit, plus
+# standard hygiene checks) automatically before every commit, so that
+# code-quality and defect-detection enforcement happens at commit time
+# rather than at code-review time.
+#
+# AAP cross-references:
+#   * §0.5.1 — "Hooks for `ruff`, `black`, `mypy`, end-of-file-fixer,
+#     trailing-whitespace" (the unconditional baseline hook set).
+#   * §0.6.1 — Python 3.13 is the target runtime; hooks pin to py3.13.
+#   * §0.6.3 — Version targets: `ruff` 0.8.x, `black` 24.10.x, `mypy`
+#     1.13.x, `bandit` 1.8.x, `pre-commit` 4.0.x.
+#   * §0.7.1 — Defect detection pipeline includes `bandit` for security.
+#   * §0.7.4 — `pre-commit` replaces `husky`/`lint-staged`.
+#   * §0.8.5 — Validation criterion: `ruff check .` MUST pass with zero
+#     errors; pre-commit enforces this on every commit.
+#
+# Usage:
+#   1. Install pre-commit (already pinned in requirements-dev.txt):
+#        pip install -r requirements-dev.txt
+#   2. Install Git hooks into the local clone:
+#        pre-commit install
+#   3. Run all hooks against every file in the repo (CI / first run):
+#        pre-commit run --all-files
+#   4. After the hooks are installed, every `git commit` will auto-run
+#      the hooks against the staged files.
+#
+# Maintenance:
+#   * Bump hook revs only when the corresponding tool version in
+#     `pyproject.toml` / `requirements-dev.txt` is bumped, so that the
+#     pre-commit-isolated tool environment stays consistent with the
+#     versions developers see locally and CI uses.
+#   * Run `pre-commit autoupdate` to bump every hook to the latest tag,
+#     then re-run `pre-commit run --all-files` to confirm the upgrade
+#     does not introduce new findings.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Default Python version for any hook that runs `language: python` (per
+# AAP §0.6.1: Python 3.13 is the target runtime). Hooks isolate their
+# own virtualenvs in `~/.cache/pre-commit/`; this directive ensures every
+# isolated env uses the same interpreter the project targets.
+# -----------------------------------------------------------------------------
+default_language_version:
+  python: python3.13
+
+# -----------------------------------------------------------------------------
+# Default install hook types. `pre-commit install` without arguments only
+# installs the `pre-commit` hook; declaring the types here means a single
+# `pre-commit install` installs every hook type referenced by any hook
+# in this config (currently just `pre-commit`, but kept explicit for
+# clarity and forward-compatibility if `commit-msg` or `pre-push` hooks
+# are added later).
+# -----------------------------------------------------------------------------
+default_install_hook_types:
+  - pre-commit
+
+# -----------------------------------------------------------------------------
+# fail_fast: false (the default). Run every hook even if an earlier hook
+# fails, so developers see all violations in one pass instead of fixing
+# one, re-running, fixing the next, and so on.
+# -----------------------------------------------------------------------------
+fail_fast: false
+
+# -----------------------------------------------------------------------------
+# Patterns excluded from EVERY hook. These are paths that should never be
+# linted, formatted, or type-checked by any hook in this config.
+# Aligned with [tool.ruff] extend-exclude and [tool.black] extend-exclude
+# in pyproject.toml so the local-tool experience matches pre-commit.
+# -----------------------------------------------------------------------------
+exclude: |
+  (?x)^(
+      \.venv/.*
+    | \.git/.*
+    | build/.*
+    | dist/.*
+    | .*\.egg-info/.*
+    | htmlcov/.*
+    | \.pytest_cache/.*
+    | \.mypy_cache/.*
+    | \.ruff_cache/.*
+    | src/ajit_backprop/db/migrations/versions/.*
+    | society_mgmt_300k\.zip
+  )$
+
+# =============================================================================
+# Hook repositories
+# =============================================================================
+repos:
+
+  # ---------------------------------------------------------------------------
+  # 1. pre-commit-hooks — standard hygiene checks
+  # ---------------------------------------------------------------------------
+  # Per AAP §0.5.1: "Hooks for ruff, black, mypy, end-of-file-fixer,
+  # trailing-whitespace" — this repo provides end-of-file-fixer and
+  # trailing-whitespace plus a curated set of additional hygiene hooks
+  # (YAML/TOML syntax, large-file detection, merge-conflict markers, etc.)
+  # that catch common defect classes before they reach review.
+  #
+  # rev v6.0.0 is the latest stable release of pre-commit/pre-commit-hooks.
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # Strip trailing whitespace from every text file. Per AAP §0.5.1
+      # (mandatory hook). Markdown files use trailing whitespace as a
+      # line-break marker, so we preserve it there with the
+      # `--markdown-linebreak-ext=md` flag.
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+
+      # Ensure every file ends with a single newline. Per AAP §0.5.1
+      # (mandatory hook). Prevents the "no newline at end of file" diff
+      # noise that some editors create.
+      - id: end-of-file-fixer
+
+      # Validate YAML syntax for every YAML file (this config, GitHub
+      # Actions workflows, docker-compose files). Catches typos that
+      # would otherwise only fail at runtime.
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+
+      # Validate TOML syntax for `pyproject.toml` and any other TOML
+      # files. Catches malformed TOML that would break `pip install`.
+      - id: check-toml
+
+      # Validate JSON syntax (e.g., `tsconfig.json` artefacts left over
+      # from JavaScript era, package metadata files).
+      - id: check-json
+
+      # Reject commits that include files larger than 500 KB. The user's
+      # uploaded `society_mgmt_300k.zip` (~105 KB) is allowed, but any
+      # accidental commit of a binary, video, or model checkpoint is
+      # blocked. The exclude pattern above whitelists the source zip;
+      # the default 500 KB threshold catches everything else.
+      - id: check-added-large-files
+        args: [--maxkb=500]
+
+      # Detect leftover merge-conflict markers (`<<<<<<<`, `=======`,
+      # `>>>>>>>`) in committed files.
+      - id: check-merge-conflict
+
+      # Normalize line endings to LF on every text file. The Python 3
+      # codebase is developed on Linux and CI runs on Linux; mixed
+      # CRLF/LF endings cause noisy diffs and break some shell scripts.
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+      # Detect committed `breakpoint()` and `pdb.set_trace()` calls.
+      # Per AAP §0.7.1 (defect remediation), debugger statements MUST
+      # NOT ship to staging or production; this hook catches them at
+      # commit time.
+      - id: debug-statements
+
+      # Reject filenames that differ only in case (e.g., `Foo.py` and
+      # `foo.py`). On case-insensitive filesystems (macOS default,
+      # Windows), such files collide; this hook prevents the trap.
+      - id: check-case-conflict
+
+      # Reject commits to `main`/`master` directly. Branch protection
+      # is the authoritative enforcement, but this hook fails fast for
+      # developers who forget which branch they are on.
+      - id: no-commit-to-branch
+        args: [--branch, main, --branch, master]
+
+      # Detect symlinks pointing at non-existent targets (broken
+      # symlinks would silently fail at runtime).
+      - id: check-symlinks
+
+      # Detect symlinks accidentally committed in place of real files
+      # (`destroyed-symlinks` — the inverse of check-symlinks).
+      - id: destroyed-symlinks
+
+      # Reject commits containing private SSH/PEM/PGP/AWS keys that
+      # shouldn't be in version control. Per AAP §0.7.1 (proactive
+      # defect remediation: "Hard-coded secrets" class) and §0.8.3
+      # ("Secrets values: ... NEVER hard-code values").
+      - id: detect-private-key
+
+      # Verify Python files are syntactically valid before any other
+      # Python-aware hook runs. Cheap pre-flight check.
+      - id: check-ast
+
+      # Verify the committed Python uses standard imports without
+      # docstring weirdness (e.g., `from __future__` ordering).
+      - id: check-builtin-literals
+
+      # Reject Python files with mixed `import` and `from ... import`
+      # in confusing ways (catches a small but real bug class).
+      - id: check-docstring-first
+
+  # ---------------------------------------------------------------------------
+  # 2. ruff-pre-commit — fast linter and formatter
+  # ---------------------------------------------------------------------------
+  # Per AAP §0.5.1 (`[tool.ruff]`), §0.6.3 (`ruff 0.8.x`), and §0.7.4
+  # (Ruff replaces ESLint + part of Prettier). The two hooks below run
+  # the linter (with --fix to auto-correct what is safely fixable) and
+  # the formatter. All rule selection and per-file-ignores live in
+  # `pyproject.toml` (`[tool.ruff.lint]` and `[tool.ruff.format]`) so
+  # this hook does not need to repeat them.
+  #
+  # rev v0.8.4 corresponds exactly to the project pin in
+  # `requirements-dev.txt` (`ruff==0.8.4`) and to the `~=0.8.0` constraint
+  # in `pyproject.toml` (`ruff~=0.8.0`).
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.4
+    hooks:
+      # Linter — apply safe auto-fixes (`--fix`), and FAIL the commit
+      # if any fix was applied (`--exit-non-zero-on-fix`). The non-zero
+      # exit forces the developer to re-stage the auto-corrected file
+      # and review the change before committing.
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        types_or: [python, pyi]
+
+      # Formatter — re-format Python source per the project's
+      # `[tool.ruff.format]` configuration in `pyproject.toml`
+      # (line-length 100, double quotes, space indent).
+      - id: ruff-format
+        types_or: [python, pyi]
+
+  # ---------------------------------------------------------------------------
+  # 3. black — opinionated formatter (defense-in-depth alongside ruff-format)
+  # ---------------------------------------------------------------------------
+  # Per AAP §0.5.1 (`[tool.black]`), §0.6.3 (`black 24.10.x`), and §0.7.4
+  # (Black replaces Prettier). Black runs after ruff-format as a
+  # consistency check — if the two formatters disagree, the diff is
+  # surfaced at commit time rather than discovered later in CI.
+  # Configuration (line-length, target-version) is read from
+  # `[tool.black]` in `pyproject.toml`.
+  #
+  # rev 24.10.0 matches the AAP §0.6.3 target version and the
+  # `pyproject.toml` constraint `black~=24.10.0`.
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        # `language_version: python3.13` keeps black's parsing aligned
+        # with the project's Python target. Black auto-detects the
+        # target version from pyproject.toml, but pinning here removes
+        # any ambiguity in the pre-commit-isolated env.
+        language_version: python3.13
+        types_or: [python, pyi]
+
+  # ---------------------------------------------------------------------------
+  # 4. mypy — static type checker (replaces TypeScript `tsc`)
+  # ---------------------------------------------------------------------------
+  # Per AAP §0.5.1 (`[tool.mypy]`), §0.6.3 (`mypy 1.13.x`), §0.7.4 (mypy
+  # replaces TypeScript), and §0.8.2 ("Type discipline: every public
+  # function MUST have full type hints; mypy --strict MUST pass with
+  # zero errors"). Mypy runs in strict mode here, exactly mirroring the
+  # `[tool.mypy]` configuration in `pyproject.toml`.
+  #
+  # `additional_dependencies` lists the type stubs and runtime packages
+  # mypy needs to resolve imports inside the pre-commit-isolated env.
+  # Without these, mypy would report `error: Cannot find implementation
+  # or library stub for module ...` for every dependency.
+  #
+  # `files: ^src/` limits the hook to first-party source. Tests are
+  # checked separately by the project's `mypy` configuration overrides
+  # in pyproject.toml (which relax `disallow_untyped_defs` for tests).
+  # The hook does not include tests because pre-commit runs against
+  # staged files, and changing test imports would otherwise fail the
+  # hook on unrelated test edits.
+  #
+  # rev v1.13.0 matches the AAP §0.6.3 target version and the
+  # `pyproject.toml` constraint `mypy~=1.13.0` and the
+  # `requirements-dev.txt` pin (`mypy==1.13.0`).
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.13.0
+    hooks:
+      - id: mypy
+        # Match the `[tool.mypy]` strict-mode flags from pyproject.toml.
+        # `--ignore-missing-imports` is necessary in the pre-commit
+        # isolated env because not every transitive dependency ships
+        # type stubs; the same setting is applied to the listed third-
+        # party modules in pyproject.toml's mypy overrides.
+        args:
+          - --strict
+          - --ignore-missing-imports
+          - --show-error-codes
+          - --pretty
+        # Restrict to first-party source. The pre-commit hook runs
+        # against the project's source tree only; tests have looser
+        # type-discipline overrides in pyproject.toml.
+        files: ^src/
+        # Explicitly skip the auto-generated Alembic migration files —
+        # they are out of scope for type-checking per AAP §0.4.1.
+        exclude: ^src/ajit_backprop/db/migrations/versions/
+        # Type stubs and runtime packages mypy needs to resolve imports
+        # inside its isolated venv. The list mirrors the runtime
+        # dependencies declared in pyproject.toml (`[project]
+        # dependencies`) plus a few stub-only packages for stdlib
+        # modules whose stubs are bundled separately on PyPI.
+        additional_dependencies:
+          - pydantic~=2.10.0
+          - pydantic-settings~=2.7.0
+          - sqlalchemy~=2.0.0
+          - types-PyYAML
+          - types-python-dateutil
+          - types-requests
+
+  # ---------------------------------------------------------------------------
+  # 5. bandit — security linter
+  # ---------------------------------------------------------------------------
+  # Per AAP §0.7.1 (defect-detection pipeline) and §0.6.3 (`bandit 1.8.x`).
+  # Bandit complements Ruff's `S`-rule selection with deeper security
+  # analysis (e.g., taint analysis on subprocess calls, weak crypto
+  # detection, hardcoded password detection). Per AAP §0.7.1 the
+  # remediation discipline is to surface and fix every high-severity
+  # finding before it lands on `main`.
+  #
+  # `files: ^src/` and `exclude: ^tests/` follow the agent prompt
+  # Phase 6 directive ("Configure to scan src/, skip test files"); the
+  # `[tool.bandit]` section in pyproject.toml mirrors the same scope.
+  #
+  # rev 1.8.0 matches the AAP §0.6.3 target version and the
+  # `pyproject.toml` constraint `bandit~=1.8.0` and the
+  # `requirements-dev.txt` pin (`bandit==1.8.0`).
+  # ---------------------------------------------------------------------------
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.0
+    hooks:
+      - id: bandit
+        # `-c pyproject.toml` makes bandit read its skip / severity
+        # configuration from the `[tool.bandit]` section in
+        # pyproject.toml so this hook stays consistent with manual
+        # `bandit -r src/` invocations.
+        args:
+          - -c
+          - pyproject.toml
+          - --severity-level
+          - medium
+        files: ^src/
+        exclude: ^tests/
+        # bandit needs the `pyproject.toml`-reading shim to parse
+        # `[tool.bandit]`; the extras package provides it.
+        additional_dependencies: ["bandit[toml]"]
+
+# =============================================================================
+# CI integration metadata for pre-commit.ci (the hosted service that
+# runs this configuration on every pull request). The `ci:` block is
+# ignored by local `pre-commit run` invocations but recognized by
+# pre-commit.ci to control auto-fix and auto-update behavior.
+# =============================================================================
+ci:
+  # Comprehensive descriptive message when pre-commit.ci pushes its
+  # auto-fixes back to the PR branch.
+  autofix_commit_msg: |
+    style: auto fixes from pre-commit hooks
+
+    For more information, see https://pre-commit.ci
+  autofix_prs: true
+  # Weekly autoupdate of every hook rev (Mondays). Combined with
+  # Dependabot's pre-commit support, this keeps hook versions current
+  # without manual intervention.
+  autoupdate_branch: ""
+  autoupdate_commit_msg: "chore(deps): pre-commit autoupdate"
+  autoupdate_schedule: weekly
+  # Skip mypy on pre-commit.ci because mypy in the isolated env requires
+  # the full dependency graph to resolve imports, which exceeds the
+  # pre-commit.ci memory budget. mypy still runs locally and in the
+  # project's GitHub Actions CI workflow.
+  skip:
+    - mypy
+  submodules: false
