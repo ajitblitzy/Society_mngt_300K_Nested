@@ -1,0 +1,172 @@
+# =============================================================================
+# requirements-dev.txt — Ajit-backprop-test (Python 3.13)
+# -----------------------------------------------------------------------------
+# Development / test dependency pins for the Python 3 implementation of the
+# Ajit-backprop-test project (refactored from JavaScript per AAP §0.5.1).
+#
+# This file is the Python equivalent of `package.json`'s `devDependencies`
+# (per AAP §0.5.2). It pairs with `pyproject.toml`'s
+# `[project.optional-dependencies] dev` group, which uses the
+# compatible-release operator (`~=X.Y.0`); this file pins to **exact**
+# versions (`==X.Y.Z`) so that
+#   `pip install -r requirements-dev.txt`
+# yields a reproducible install on every machine (per AAP §0.6.6, §0.8.2).
+#
+# Pinning policy (per AAP §0.6.2 / §0.6.6 / Phase 10 of the agent prompt):
+#   * Use `==` for exact version pins — never `>=`, `~=`, or unpinned names.
+#   * Each pinned version is the highest stable patch in the minor line that
+#     AAP §0.6.3 specifies, and is compatible with the corresponding
+#     `~=X.Y.0` constraint declared in `pyproject.toml`.
+#   * Any deviation upward (a patch / minor bump) is documented inline with
+#     the CVE / remediation rationale, mirroring the discipline applied in
+#     `requirements.txt` (e.g., `python-dotenv`, `torch`).
+#
+# Scope rationale (per AAP §0.6.3 and the agent-prompt scope guard
+# "MUST NOT include packages NOT listed in AAP unless required as a
+# transitive dep"):
+#   This file pins ONLY the development packages enumerated in AAP §0.6.3.
+#   Inheritance of the production packages from `requirements.txt` is
+#   declared on the first non-comment line below (`-r requirements.txt`),
+#   so a single `pip install -r requirements-dev.txt` resolves both the
+#   runtime stack and the test / lint / security toolchain.
+#
+# Defect-detection alignment (per AAP §0.7.1):
+#   The pipeline calls out `ruff`, `pylint`, `mypy --strict`, and `bandit`
+#   for static analysis, plus `pip-audit` for dependency CVE scanning —
+#   all four are pinned below. `pytest` (with `pytest-asyncio`,
+#   `pytest-cov`, `pytest-mock`, `pytest-xdist`) drives test parity per
+#   AAP §0.8.2 ("Test parity, then test growth").
+#
+# Install: `pip install -r requirements-dev.txt`
+# Audit:   `pip-audit -r requirements-dev.txt`     (per AAP §0.7.1, §0.7.4)
+# Verify:  `pip install --dry-run -r requirements-dev.txt`
+# Validate (per AAP §0.8.5):
+#   `pip install -r requirements-dev.txt` completes without error on a
+#   fresh Python 3.13 environment.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Inherit production runtime dependencies (per agent-prompt Phase 2).
+# Listing `-r requirements.txt` here means a single
+#   `pip install -r requirements-dev.txt`
+# resolves the entire dependency graph (runtime + dev), which is exactly the
+# behaviour `pyproject.toml`'s `pip install -e ".[dev]"` provides via the
+# `dev` extras group.
+# -----------------------------------------------------------------------------
+-r requirements.txt
+
+### Test Framework ###
+# pytest is the project's test runner (AAP §0.4.1 "pytest over unittest").
+# It replaces `jest` / `mocha` from the JS baseline (AAP §0.6.3). The
+# accompanying plugins cover async tests (`pytest-asyncio`), coverage
+# (`pytest-cov` driving the `coverage` engine), mock fixtures
+# (`pytest-mock`), and parallel execution (`pytest-xdist`) — together they
+# replace `jest --coverage`, `jest.mock`, `jest --maxWorkers`, and `sinon`
+# from the JS ecosystem (AAP §0.6.3 substitution rows).
+#
+# Versions follow AAP §0.6.3 minor lines pinned to the highest stable
+# patch at refactor planning time.
+#
+# Known finding (acceptable per AAP §0.8.5 / agent-prompt Phase 12 which
+# require *zero high-severity* findings):
+#   * CVE-2025-71176 (GHSA-6w46-j5rx-g56g) — pytest <= 9.0.2 on UNIX uses
+#     predictable /tmp/pytest-of-{user} directories enabling local DoS /
+#     priv-esc via symlink races. Severity: **Moderate (CVSS 6.8 / MEDIUM,
+#     local attack vector, low impact)** per the GitHub Advisory and NVD.
+#     Fix is in pytest 9.0.3, but pytest 9.x introduces breaking changes
+#     for plugins — pinning to 9.0.3 here would cascade into major-version
+#     bumps for `pytest-asyncio`, `pytest-cov`, `pytest-mock`, and
+#     `pytest-xdist` that exit the AAP §0.6.3 minor lines for all five
+#     packages and conflict with `pyproject.toml`'s `~=8.3.0` constraint.
+#     The finding is moderate (NOT high) severity; the AAP §0.8.5
+#     validation criterion ("zero high-severity vulnerabilities") and the
+#     agent-prompt Phase 12 step ("zero high-severity findings") both
+#     remain satisfied. The AAP §0.7.1 defect-detection pipeline also
+#     remains valid — pytest still drives test parity and runs cleanly on
+#     CPython 3.13. Re-evaluate when the pytest 8.3 line ships a backport
+#     or when the broader test stack is ready for the 9.x major bump.
+pytest==8.3.4
+pytest-asyncio==0.25.0
+pytest-cov==6.0.0
+pytest-mock==3.14.0
+pytest-xdist==3.6.1
+coverage==7.6.10
+
+### Linters and Formatters ###
+# `ruff` is the primary Python linter — AAP §0.4.1 selects it because it is
+# 10–100× faster than `pylint` and consolidates `flake8`, `isort`, and parts
+# of `pylint` / `black` into a single binary, replacing `eslint` from the JS
+# baseline. `black` is the opinionated formatter (replaces `prettier`).
+# `isort` orders imports (replaces `eslint-plugin-import` sort rules).
+# `pylint` is retained as a deeper / second-pass linter per AAP §0.7.1
+# defect-detection pipeline ("ruff check, pylint, mypy --strict, bandit").
+#
+# `black` is pinned to 26.3.1 (the first release that fixes the CVE) to
+# remediate CVE-2026-32274 / GHSA-3936-cmfr-pm3m — a **HIGH severity**
+# (CVSS 4.0 base score 8.7) path-traversal / arbitrary-file-write
+# vulnerability in the cache-key construction (the unsanitized
+# `--python-cell-magics` value is incorporated into the cache filename
+# when its concatenated string stays under the 32-character hash
+# threshold). Affected versions: < 26.3.1 (i.e., the AAP-listed
+# 24.10.0 is vulnerable). Without this bump, AAP §0.8.5 validation
+# criterion "`pip-audit` reports zero high-severity vulnerabilities"
+# fails. This proactive bump satisfies the AAP §0.7.1
+# defect-remediation pipeline ("iterate until zero high-severity
+# findings") and mirrors the precedent in `requirements.txt` where
+# `python-dotenv` and `torch` were bumped beyond their AAP-listed minor
+# lines for the same reason. 26.3.1 ships as a pure-Python wheel for
+# Python 3.13 and remains a drop-in replacement for 24.10.0 at the
+# command-line interface, satisfying the agent-prompt Phase 10 discipline
+# ("MUST select the highest stable patch within each minor version listed
+# in AAP §0.6.3") under the documented CVE-remediation exception.
+pylint==3.3.3
+ruff==0.8.4
+black==26.3.1
+isort==5.13.2
+
+### Type Checking ###
+# `mypy --strict` is the static type checker invoked by AAP §0.7.1 and
+# AAP §0.8.5 ("`mypy --strict src/ajit_backprop` reports zero errors").
+# It is the Python equivalent of the TypeScript compiler (`tsc`) per
+# AAP §0.6.3, enforcing the type discipline that AAP §0.8.2 mandates
+# ("every public function MUST have full type hints").
+mypy==1.13.0
+
+### Security and Audit ###
+# `bandit` scans Python source for security anti-patterns (insecure crypto,
+# hard-coded credentials, SQL injection patterns) — AAP §0.7.1 lists it as
+# part of the per-file defect-detection pipeline; AAP §0.8.5 validation
+# criterion: "`bandit -r src/ajit_backprop` reports zero high-severity
+# findings".
+# `pip-audit` scans the dependency manifest for known CVEs (AAP §0.7.1
+# "Python-side dependency audit"); AAP §0.8.5 validation criterion:
+# "`pip-audit` reports zero high-severity vulnerabilities against
+# `requirements.txt`".
+bandit==1.8.0
+pip-audit==2.7.3
+
+### Pre-Commit and Build Tools ###
+# `pre-commit` orchestrates Git hooks (replaces `husky` per AAP §0.6.3) and
+# is the engine that drives the `.pre-commit-config.yaml` created under
+# AAP §0.5.1.
+# `tox` runs the test matrix across Python versions if needed (AAP §0.6.3).
+# `build` is the standardized PEP 517 package builder — AAP §0.6.1 lists it
+# as the Python equivalent of `npm run build` (per AAP §0.5.1 / §0.8.3,
+# `python -m build` replaces the JS-era `npm run build` command).
+pre-commit==4.0.1
+tox==4.23.2
+build==1.2.2
+
+### Test Data and Mocking ###
+# `factory-boy` produces test data factories (replaces `factory-girl` from
+# the JS baseline per AAP §0.6.3).
+# `faker` generates realistic synthetic data (replaces `@faker-js/faker`).
+# `freezegun` freezes time in tests (replaces `sinon.useFakeTimers`).
+# `responses` mocks sync HTTP calls; `respx` mocks async HTTP calls made
+# through `httpx` — together they replace `nock` / `msw` from the JS
+# baseline (AAP §0.6.3 substitution rows).
+factory-boy==3.3.1
+faker==33.0.0
+freezegun==1.5.1
+responses==0.25.5
+respx==0.21.1
