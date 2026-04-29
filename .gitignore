@@ -1,0 +1,303 @@
+# =============================================================================
+# .gitignore for Ajit-backprop-test (Python 3.13 project)
+# =============================================================================
+# Per Agent Action Plan (AAP) §0.5.1 and §0.3.2, this file enumerates ignore
+# patterns appropriate for a Python 3.13 project. It supersedes any prior
+# Node-based .gitignore. Build artifacts, virtual environments, tool caches,
+# secret material (.env), and IDE-specific scratch files are excluded from
+# version control. Defensive Node/JS patterns are also included so that an
+# accidental npm/yarn invocation does not pollute the repository.
+#
+# Pattern discipline:
+#   - Trailing-slash patterns (e.g. `dist/`) match directories only.
+#   - Bare patterns (e.g. `.coverage`) match files or directories of that name.
+#   - Wildcards follow git's gitignore syntax (man gitignore).
+#   - Negation rules (`!path`) re-include files matched by an earlier pattern.
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# Phase 1: Python Bytecode and Compilation Artifacts
+# -----------------------------------------------------------------------------
+# CPython 3.13 writes compiled bytecode into `__pycache__` directories and
+# `*.pyc`/`*.pyo` files. Jython writes `*$py.class`. None of these belong in
+# version control because they are reproducible from the source `*.py`.
+__pycache__/
+*.py[cod]
+*$py.class
+
+
+# -----------------------------------------------------------------------------
+# Phase 2: Distribution and Packaging
+# -----------------------------------------------------------------------------
+# Outputs of `python -m build`, `setup.py`, and pip's local installation
+# scratch space. Per AAP §0.3.2, build artifacts are explicitly out of scope
+# and must not be committed.
+.Python
+build/
+dist/
+sdist/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+var/
+*.egg-info/
+*.egg
+MANIFEST
+
+# pip / setuptools intermediate files
+pip-log.txt
+pip-delete-this-directory.txt
+pip-wheel-metadata/
+
+# Wheel build outputs
+share/python-wheels/
+wheels/
+
+# PyInstaller manifests (only useful at distribution time)
+*.manifest
+*.spec
+
+
+# -----------------------------------------------------------------------------
+# Phase 3: Virtual Environments and Secrets
+# -----------------------------------------------------------------------------
+# Virtual environments are local to each developer's machine and must never
+# be committed (AAP §0.5.1). The Setup Status Log confirms the project's
+# venv lives at `.venv/`.
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+.virtualenv/
+
+# CRITICAL (AAP §0.8.2): the ACTUAL `.env` file (containing real DB_HOST,
+# API_KEY, and other secret values) MUST NEVER be committed. Only the
+# `.env.example` template (containing blank placeholders) is committed —
+# the negation pattern below explicitly preserves it even though gitignore
+# semantics already exclude `.env.example` from the `.env` rule.
+.env
+.env.local
+.env.*.local
+.env.development
+.env.staging
+.env.production
+.env.test
+!.env.example
+!.env.sample
+!.env.template
+
+# direnv local environment
+.envrc
+
+
+# -----------------------------------------------------------------------------
+# Phase 4: Test Artifacts and Coverage Reports
+# -----------------------------------------------------------------------------
+# Per AAP §0.5.1: `.pytest_cache/`, `.coverage`, `htmlcov/` are ignored.
+# Coverage XML/JSON outputs and Hypothesis databases are likewise local
+# scratch files that should be regenerated on each test run.
+.pytest_cache/
+.cache/
+.coverage
+.coverage.*
+coverage.xml
+coverage.json
+*.cover
+*.py,cover
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+
+# JUnit / xUnit XML test reports
+nose2-junit.xml
+junit.xml
+junit/
+test-results/
+report.xml
+
+
+# -----------------------------------------------------------------------------
+# Phase 5: Type Checker and Linter Caches
+# -----------------------------------------------------------------------------
+# Per AAP §0.5.1: `.mypy_cache/` and `.ruff_cache/` are ignored. Other type
+# checkers (Pyre, Pytype) and the mypy daemon (dmypy) also write local caches.
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.ruff_cache/
+.pylint.d/
+
+
+# -----------------------------------------------------------------------------
+# Phase 6: IDE and Editor Scratch Files
+# -----------------------------------------------------------------------------
+# Workspace-specific configuration that varies between developers. Teams
+# that wish to share specific editor settings (e.g., `.vscode/settings.json`)
+# can selectively un-ignore them with `!` rules below this block.
+.vscode/
+.idea/
+*.iml
+*.iws
+*.ipr
+.project
+.pydevproject
+.settings/
+.spyderproject
+.spyproject
+.ropeproject
+
+# Vim / Emacs / nano swap and backup files
+*.swp
+*.swo
+*.swn
+*~
+.*.swp
+.*.swo
+
+# OS-specific metadata
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+
+# -----------------------------------------------------------------------------
+# Phase 7: Tool Caches, Logs, and Local Overrides
+# -----------------------------------------------------------------------------
+# Generic log files, local Django/Flask overrides, and pipenv lock files for
+# tools the project does not adopt. Note: `poetry.lock` and `uv.lock` are
+# intentionally NOT ignored — they may be committed if those tools are used
+# for supplementary lockfile generation alongside `requirements.txt`
+# (AAP §0.6.1 mentions `uv` as an optional faster installer).
+*.log
+*.log.*
+logs/
+local_settings.py
+instance/
+.webassets-cache
+
+# Pipenv (project uses pip + requirements.txt, not pipenv)
+Pipfile.lock
+
+# Celery beat schedule
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# IPython / Jupyter notebook checkpoints
+.ipynb_checkpoints/
+profile_default/
+ipython_config.py
+
+
+# -----------------------------------------------------------------------------
+# Phase 8: Documentation Build Artifacts
+# -----------------------------------------------------------------------------
+# Sphinx, MkDocs, and similar generators write into local build folders that
+# must not be committed (the canonical source is the .md / .rst input).
+docs/_build/
+docs/build/
+docs/_static/
+docs/_templates/_build/
+.sphinx-build/
+site/
+
+
+# -----------------------------------------------------------------------------
+# Phase 9: Containers and Deployment Runtime Artifacts
+# -----------------------------------------------------------------------------
+# Process IDs, Unix domain sockets, and other runtime byproducts.
+*.pid
+*.sock
+*.seed
+*.pid.lock
+
+
+# -----------------------------------------------------------------------------
+# Phase 10: Local Database and Migration Artifacts
+# -----------------------------------------------------------------------------
+# Local SQLite databases used during development. Production data and
+# Alembic-generated migration files are NOT ignored — only ad-hoc local
+# database files are. (Alembic migration scripts under
+# `src/ajit_backprop/db/migrations/` are first-class source and committed.)
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite3-journal
+db.sqlite3
+db.sqlite3-journal
+
+
+# -----------------------------------------------------------------------------
+# Phase 11: Defensive Ignore — JavaScript / Node.js Era Artifacts
+# -----------------------------------------------------------------------------
+# Per AAP §0.3.2, the project does not use Node.js. These patterns are
+# defensive: if any JS tool is ever invoked accidentally (or if a
+# contributor experiments with the source archive at `society_mgmt_300k.zip`),
+# the resulting Node-specific files will be ignored automatically.
+node_modules/
+jspm_packages/
+bower_components/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+yarn.lock
+package-lock.json
+pnpm-lock.yaml
+pnpm-debug.log*
+lerna-debug.log*
+.npm/
+.yarn/
+.pnp.*
+
+# Bundler / transpiler outputs (also Node-era; defensive)
+.next/
+.nuxt/
+.parcel-cache/
+.cache-loader/
+.eslintcache
+.stylelintcache
+
+
+# -----------------------------------------------------------------------------
+# Phase 12: Miscellaneous Local Tooling and Editor Plugins
+# -----------------------------------------------------------------------------
+# Pre-commit local cache, mypy daemon socket, and other transient files.
+.pre-commit-cache/
+
+# Local Docker overrides (production docker-compose.yml is committed; only
+# developer-specific override files are ignored)
+docker-compose.override.yml
+docker-compose.override.yaml
+
+# Profiler outputs (per AAP §0.7.2 profiling protocol — `cProfile` writes
+# to local files that are scratch artifacts and not source)
+*.prof
+*.pstats
+profile.out
+
+# Backup files from migration/refactor scripts
+*.bak
+*.orig
+*.rej
+
+# Local archive expansions (e.g., `society_mgmt_300k_extracted/` — the .zip
+# itself remains tracked per the current repository state, but any local
+# extraction directory is scratch space)
+society_mgmt_300k_extracted/
