@@ -16,7 +16,9 @@
 #   * §0.5.1 — "Hooks for `ruff`, `black`, `mypy`, end-of-file-fixer,
 #     trailing-whitespace" (the unconditional baseline hook set).
 #   * §0.6.1 — Python 3.13 is the target runtime; hooks pin to py3.13.
-#   * §0.6.3 — Version targets: `ruff` 0.8.x, `black` 24.10.x, `mypy`
+#   * §0.6.3 — Version targets: `ruff` 0.8.x, `black` 24.10.x baseline
+#     (bumped to 26.3.x to remediate CVE-2026-32274 / GHSA-3936-cmfr-pm3m
+#     — see the black hook block below for the full rationale), `mypy`
 #     1.13.x, `bandit` 1.8.x, `pre-commit` 4.0.x.
 #   * §0.7.1 — Defect detection pipeline includes `bandit` for security.
 #   * §0.7.4 — `pre-commit` replaces `husky`/`lint-staged`.
@@ -231,18 +233,34 @@ repos:
   # ---------------------------------------------------------------------------
   # 3. black — opinionated formatter (defense-in-depth alongside ruff-format)
   # ---------------------------------------------------------------------------
-  # Per AAP §0.5.1 (`[tool.black]`), §0.6.3 (`black 24.10.x`), and §0.7.4
-  # (Black replaces Prettier). Black runs after ruff-format as a
-  # consistency check — if the two formatters disagree, the diff is
-  # surfaced at commit time rather than discovered later in CI.
-  # Configuration (line-length, target-version) is read from
-  # `[tool.black]` in `pyproject.toml`.
+  # Per AAP §0.5.1 (`[tool.black]`) and §0.7.4 (Black replaces Prettier).
+  # Black runs after ruff-format as a consistency check — if the two
+  # formatters disagree, the diff is surfaced at commit time rather than
+  # discovered later in CI. Configuration (line-length, target-version)
+  # is read from `[tool.black]` in `pyproject.toml`.
   #
-  # rev 24.10.0 matches the AAP §0.6.3 target version and the
-  # `pyproject.toml` constraint `black~=24.10.0`.
+  # rev 26.3.1 (bumped from the AAP §0.6.3-listed 24.10.0 baseline) to
+  # remediate CVE-2026-32274 / GHSA-3936-cmfr-pm3m — a HIGH severity
+  # (CVSS 4.0 base score 8.7) path-traversal / arbitrary-file-write
+  # vulnerability in the cache-key construction (the unsanitized
+  # `--python-cell-magics` value is incorporated into the cache filename
+  # when its concatenated string stays under the 32-character hash
+  # threshold). Affected versions: < 26.3.1. Pre-commit runs hooks in an
+  # isolated venv on every commit and caches the resolved version, so
+  # leaving rev 24.10.0 here would silently install the vulnerable Black
+  # in every developer's pre-commit cache. Without this bump the
+  # `pre-commit run --all-files` install path would break AAP §0.7.1
+  # ("iterate until zero high-severity findings") and AAP §0.8.5
+  # ("`pip-audit` reports zero high-severity vulnerabilities"). 26.3.1
+  # ships as a pure-Python wheel for Python 3.13 and remains a drop-in
+  # replacement for 24.10.0 at the command-line interface, mirroring the
+  # precedent established for `torch` and `python-dotenv` in
+  # `requirements.txt` and for `black` itself in `requirements-dev.txt`
+  # (lines 104-121) and `pyproject.toml` (lines 127-142) under the
+  # documented CVE-remediation exception.
   # ---------------------------------------------------------------------------
   - repo: https://github.com/psf/black
-    rev: 24.10.0
+    rev: 26.3.1
     hooks:
       - id: black
         # `language_version: python3.13` keeps black's parsing aligned

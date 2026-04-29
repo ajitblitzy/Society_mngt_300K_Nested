@@ -124,7 +124,22 @@ dev = [
 
   # Linters / formatters / type-check --------------------------------------
   "ruff~=0.8.0",
-  "black~=24.10.0",
+  # black: bumped to 26.3.x to remediate CVE-2026-32274 / GHSA-3936-cmfr-pm3m
+  # — a HIGH severity (CVSS 4.0 base score 8.7) path-traversal / arbitrary-
+  # file-write vulnerability in the cache-key construction (the unsanitized
+  # `--python-cell-magics` value is incorporated into the cache filename when
+  # its concatenated string stays under the 32-character hash threshold).
+  # Affected versions: < 26.3.1 (i.e., the AAP §0.6.3-listed 24.10.0 line is
+  # vulnerable). Without this bump the `pip install -e ".[dev]"` resolution
+  # path would install vulnerable Black 24.10.x, breaking AAP §0.7.1
+  # ("iterate until zero high-severity findings") and AAP §0.8.5
+  # ("`pip-audit` reports zero high-severity vulnerabilities"). The `~=26.3.0`
+  # constraint permits patch updates within the 26.3.x line (matching
+  # `requirements-dev.txt` `black==26.3.1`) while preventing accidental
+  # major-version drift, mirroring the precedent established for `torch`
+  # (CVE-2025-32434/2953/3730) and `python-dotenv` (GHSA-mf9w-mj56-hr94)
+  # under the documented CVE-remediation exception.
+  "black~=26.3.0",
   "isort~=5.13.0",
   "pylint~=3.3.0",
   "mypy~=1.13.0",
