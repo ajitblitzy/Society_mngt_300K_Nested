@@ -79,7 +79,11 @@ dependencies = [
   # Validation / settings ----------------------------------------------------
   "pydantic~=2.10.0",
   "pydantic-settings~=2.7.0",
-  "python-dotenv~=1.0.0",
+  # python-dotenv: bumped to 1.2.x to remediate CVE-2026-28684
+  # (GHSA-mf9w-mj56-hr94) per AAP §0.7.1 / §0.7.4 — symlink-following
+  # arbitrary-file-overwrite bug in `set_key()` / `unset_key()` present
+  # in 1.0.x. requirements.txt pins `python-dotenv==1.2.2`.
+  "python-dotenv~=1.2.0",
 
   # Database (SQLAlchemy + Alembic + PostgreSQL driver) ---------------------
   "sqlalchemy~=2.0.0",
@@ -93,8 +97,13 @@ dependencies = [
   # see AAP §0.7.2 — PyTorch is the canonical backprop engine in Python.
   # NumPy and PyTorch ship as manylinux wheels, satisfying the user's
   # "include binary dependency" directive in AAP §0.6.5 / §0.8.3).
+  #
+  # torch: bumped to 2.8.x to remediate three CVEs in 2.5.x per AAP §0.7.1
+  # / §0.7.4: CVE-2025-32434 (CRITICAL RCE in `torch.load`), CVE-2025-2953
+  # (local DoS), CVE-2025-3730 (local DoS). 2.8.0 is the minimum that fixes
+  # all three. requirements.txt pins `torch==2.8.0`.
   "numpy~=2.2.0",
-  "torch~=2.5.0",
+  "torch~=2.8.0",
 ]
 
 # -----------------------------------------------------------------------------

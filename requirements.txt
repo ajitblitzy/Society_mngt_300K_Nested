@@ -1,0 +1,105 @@
+# =============================================================================
+# requirements.txt — Ajit-backprop-test (Python 3.13)
+# -----------------------------------------------------------------------------
+# Production runtime dependencies for the Python 3 implementation of the
+# Ajit-backprop-test project (refactored from JavaScript per AAP §0.5.1).
+#
+# This file is the Python equivalent of `package.json`'s `dependencies` plus
+# the lockfile role of `package-lock.json` (per AAP §0.5.2). It pairs with
+# `pyproject.toml`, which carries the project metadata and uses the
+# compatible-release operator (`~=X.Y.0`) for runtime deps; this file pins
+# to **exact** versions (`==X.Y.Z`) so that `pip install -r requirements.txt`
+# yields a reproducible install on every machine (per AAP §0.6.6, §0.8.2).
+#
+# Pinning policy (per AAP §0.6.2 / §0.6.6):
+#   * Use `==` for exact version pins — never `>=`, `~=`, or unpinned names.
+#   * Each pinned version is the highest stable release in its minor line at
+#     the time of refactor planning, and is compatible with the corresponding
+#     `~=X.Y.0` constraint declared in `pyproject.toml`.
+#   * Every C-extension package below ships pre-built manylinux wheels
+#     (per AAP §0.6.5 binary dependency note) — `psycopg[binary]`, `numpy`,
+#     and `torch` install without requiring a local C/C++ toolchain.
+#
+# Scope rationale (per AAP §0.6.2):
+#   "Concrete inclusion of any given dependency is conditional on the
+#   JavaScript source actually using the corresponding capability — the
+#   platform includes only those dependencies whose JavaScript counterparts
+#   appear in the user-supplied source."
+# Because the user's repository is empty (per AAP §0.2.1 / §0.2.3), this
+# file pins ONLY what the unconditional Python scaffold (AAP §0.5.1) needs:
+# configuration / settings, database / migrations, logging, and numerical
+# (backprop) compute. HTTP frameworks, queue / scheduler libraries, cloud
+# SDKs, image / HTML processing, and auth / crypto packages from the broader
+# AAP §0.6.2 inventory are intentionally omitted; they will be added if and
+# when JavaScript source that needs them is committed (per AAP §0.5.2
+# conditional pattern mappings).
+#
+# Install: `pip install -r requirements.txt`
+# Audit:   `pip-audit -r requirements.txt`         (per AAP §0.7.1, §0.7.4)
+# Verify:  `pip install --dry-run -r requirements.txt`
+# =============================================================================
+
+### Configuration / Settings ###
+# Pydantic provides type-checked construction for data shapes and replaces
+# the JS validation libraries (`joi`, `yup`, `zod`, `class-validator`) listed
+# in AAP §0.6.2. `pydantic-settings` layers env-driven typed configuration on
+# top of Pydantic, replacing scattered `process.env.X` reads (AAP §0.7.3
+# "Configuration loading" cross-cutting concern). `python-dotenv` loads
+# `.env` files into `os.environ`, replacing the `dotenv` npm package.
+#
+# python-dotenv is pinned to 1.2.2 (the highest stable in the 1.x line that
+# resolves with Python 3.13) to remediate CVE-2026-28684 (GHSA-mf9w-mj56-hr94),
+# a symlink-following arbitrary-file-overwrite bug in `set_key()` /
+# `unset_key()` present in 1.0.x. This proactive bump satisfies the AAP §0.7.1
+# defect-remediation pipeline ("iterate until zero high-severity findings"
+# under `pip-audit`) and AAP §0.8.5 validation criterion.
+pydantic==2.10.4
+pydantic-settings==2.7.0
+python-dotenv==1.2.2
+
+### Database & Migrations ###
+# SQLAlchemy 2.0 (modern API) is the Python equivalent of `sequelize` /
+# `typeorm` / `prisma` (AAP §0.6.2). Alembic provides the CLI migration
+# command (`alembic upgrade head`) that replaces `npm run migrate
+# --db=${DB_HOST}` (AAP §0.5.1 / §0.8.3). `psycopg[binary]` is the
+# PostgreSQL driver (the `[binary]` extra pulls in the prebuilt manylinux
+# wheel so no local libpq build is required — satisfying AAP §0.6.5
+# "include binary dependency" via prebuilt wheels). `DB_HOST` is read from
+# `os.environ` at runtime per AAP §0.8.3.
+sqlalchemy==2.0.36
+alembic==1.14.0
+psycopg[binary]==3.2.3
+
+### Logging ###
+# `loguru` is the ergonomic logging library selected per AAP §0.6.2 (Python
+# equivalent of `winston` / `pino` / `bunyan`). It backs the project-wide
+# logging configuration described in AAP §0.7.3 "Logging" cross-cutting
+# concern, where every translated `console.log` call becomes a structured
+# `logger.info(...)` call.
+loguru==0.7.3
+
+### Numerical (backprop core) ###
+# The repository name `Ajit-backprop-test` strongly suggests neural-network
+# backpropagation (AAP §0.4.1 / §0.7.2 "Backpropagation-specific note").
+# NumPy is the canonical Python n-dimensional-array library (replaces
+# `mathjs` / `ndarray` per AAP §0.6.2). PyTorch (`torch`) is the canonical
+# Python autograd / tensor / GPU engine — translating naive JS loops into
+# PyTorch tensor ops typically delivers the 10×–1000× speedup that AAP
+# §0.7.2 calls out as the primary performance technique for this domain.
+# Both ship as manylinux wheels for Python 3.13 (cp313), satisfying the
+# AAP §0.6.5 binary-dependency directive.
+#
+# torch is pinned to 2.8.0 to remediate three known CVEs present in 2.5.x:
+#   * CVE-2025-32434 / GHSA-53q9-r3pm-6pq6 — CRITICAL Remote Code Execution
+#     when calling `torch.load(..., weights_only=True)`. Fixed in 2.6.0.
+#   * CVE-2025-2953 / GHSA-3749-ghw9-m3mg — local DoS via
+#     `torch.mkldnn_max_pool2d`. Fixed in 2.7.1.
+#   * CVE-2025-3730 / GHSA-887c-mr87-cxwp — local DoS via
+#     `torch.nn.functional.ctc_loss`. Fixed in 2.8.0.
+# Pinning to 2.8.0 (the minimum version that fixes all three) satisfies the
+# AAP §0.7.1 / §0.7.4 / §0.8.5 validation criterion of "zero high-severity
+# findings" under `pip-audit -r requirements.txt` while delivering a clean
+# audit (zero findings of any severity for torch). 2.8.0 ships as a cp313
+# manylinux wheel.
+numpy==2.2.0
+torch==2.8.0
