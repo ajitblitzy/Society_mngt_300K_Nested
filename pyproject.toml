@@ -1,0 +1,424 @@
+# =============================================================================
+# pyproject.toml — Ajit-backprop-test
+# -----------------------------------------------------------------------------
+# PEP 621 project manifest for the Python 3 implementation of the
+# Ajit-backprop-test project (refactored from JavaScript per AAP §0.5.1).
+#
+# This file is the Python equivalent of `package.json` per AAP §0.5.2 — it
+# carries project metadata, runtime and development dependencies, the PEP
+# 517/518 build-system declaration, and embedded configuration for every
+# Python tool used by the project (`ruff`, `black`, `isort`, `mypy`,
+# `pytest`, `coverage`, `pylint`, `bandit`).
+#
+# Version pinning policy (per AAP §0.6.2):
+#   * `[project] dependencies` and `[project.optional-dependencies] dev` use
+#     the **compatible-release operator** (`~=`) to allow patch-level
+#     updates while preventing accidental major-version drift.
+#   * `requirements.txt` and `requirements-dev.txt` pin to **exact** versions
+#     for reproducible installs.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Build system declaration (PEP 517 / PEP 518)
+# -----------------------------------------------------------------------------
+# Per AAP §0.6.1: setuptools is bundled with Python 3.13 and is the PEP 517
+# build backend; `build` 1.2.2+ is the standardized package builder used in
+# place of `npm run build` (AAP §0.5.1, §0.8.3).
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# -----------------------------------------------------------------------------
+# Project metadata (PEP 621)
+# -----------------------------------------------------------------------------
+# Per AAP §0.5.1:
+#   * `name = "ajit-backprop-test"` — project (distribution) name preserves
+#     the original repository name verbatim. Hyphens are permitted in the
+#     distribution name; only the *importable module* must use snake_case.
+#   * The importable Python module is `ajit_backprop` (PEP 8 / AAP §0.4.1).
+#   * `requires-python = ">=3.13"` enforces the Python 3.13 target version
+#     (AAP §0.6.1; Python 3.13 ships PEP 703 free-threaded mode and PEP 744
+#     experimental JIT, aligning with the user's performance directive).
+[project]
+name = "ajit-backprop-test"
+version = "0.1.0"
+description = "Test project for backprop integration (Python 3 implementation)."
+readme = "README.md"
+requires-python = ">=3.13"
+license = {text = "Proprietary"}
+authors = [
+  {name = "Ajit"},
+]
+keywords = [
+  "backpropagation",
+  "neural-network",
+  "machine-learning",
+  "test",
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Developers",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
+  "Development Status :: 3 - Alpha",
+]
+
+# -----------------------------------------------------------------------------
+# Runtime dependencies
+# -----------------------------------------------------------------------------
+# Per AAP §0.6.2 (Python equivalents for common npm packages). Compatible-
+# release pins (`~=X.Y.0`) permit patch updates while preventing accidental
+# major-version drift. Concrete inclusion mirrors the AAP-mandated baseline
+# package set; transitive consumers add what they need.
+dependencies = [
+  # Validation / settings ----------------------------------------------------
+  "pydantic~=2.10.0",
+  "pydantic-settings~=2.7.0",
+  "python-dotenv~=1.0.0",
+
+  # Database (SQLAlchemy + Alembic + PostgreSQL driver) ---------------------
+  "sqlalchemy~=2.0.0",
+  "alembic~=1.14.0",
+  "psycopg[binary]~=3.2.0",
+
+  # Logging -----------------------------------------------------------------
+  "loguru~=0.7.0",
+
+  # Numeric / ML (the project name "Ajit-backprop-test" implies backprop;
+  # see AAP §0.7.2 — PyTorch is the canonical backprop engine in Python.
+  # NumPy and PyTorch ship as manylinux wheels, satisfying the user's
+  # "include binary dependency" directive in AAP §0.6.5 / §0.8.3).
+  "numpy~=2.2.0",
+  "torch~=2.5.0",
+]
+
+# -----------------------------------------------------------------------------
+# Optional dependencies — development / testing tooling
+# -----------------------------------------------------------------------------
+# Per AAP §0.5.2 ("Translate `dependencies` and `devDependencies` to
+# `project.dependencies` and `project.optional-dependencies.dev`") and
+# AAP §0.6.3 (development and test dependencies inventory).
+[project.optional-dependencies]
+dev = [
+  # Test runner and plugins -------------------------------------------------
+  "pytest~=8.3.0",
+  "pytest-asyncio~=0.25.0",
+  "pytest-cov~=6.0.0",
+  "pytest-mock~=3.14.0",
+  "pytest-xdist~=3.6.0",
+  "coverage~=7.6.0",
+
+  # Linters / formatters / type-check --------------------------------------
+  "ruff~=0.8.0",
+  "black~=24.10.0",
+  "isort~=5.13.0",
+  "pylint~=3.3.0",
+  "mypy~=1.13.0",
+
+  # Security ----------------------------------------------------------------
+  "bandit~=1.8.0",
+  "pip-audit~=2.7.0",
+
+  # Workflow / build --------------------------------------------------------
+  "pre-commit~=4.0.0",
+  "tox~=4.23.0",
+  "build~=1.2.2",
+
+  # Test utilities ----------------------------------------------------------
+  "factory-boy~=3.3.0",
+  "faker~=33.0.0",
+  "freezegun~=1.5.0",
+  "responses~=0.25.0",
+  "respx~=0.21.0",
+]
+
+# -----------------------------------------------------------------------------
+# Project URLs
+# -----------------------------------------------------------------------------
+[project.urls]
+Homepage = "https://github.com/Ajit/Ajit-backprop-test"
+Repository = "https://github.com/Ajit/Ajit-backprop-test"
+Issues = "https://github.com/Ajit/Ajit-backprop-test/issues"
+
+# -----------------------------------------------------------------------------
+# Console scripts / entry points
+# -----------------------------------------------------------------------------
+# Per AAP §0.4.1: `__main__.py` is the entry point for `python -m
+# ajit_backprop`; this declaration also exposes the `ajit-backprop` CLI
+# command after `pip install`.
+[project.scripts]
+ajit-backprop = "ajit_backprop.__main__:main"
+
+# =============================================================================
+# Setuptools configuration (src layout — AAP §0.4.1)
+# =============================================================================
+# The src layout is chosen over a flat layout because it prevents accidental
+# import of in-tree modules that aren't installed and surfaces packaging
+# mistakes during `pip install -e .` (AAP §0.4.1).
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["ajit_backprop*"]
+exclude = ["tests*", "docs*"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools.package-data]
+ajit_backprop = ["py.typed"]
+
+# =============================================================================
+# Ruff — primary linter and formatter (replaces ESLint + part of Prettier)
+# =============================================================================
+# Per AAP §0.5.1 (`[tool.ruff]`) and §0.6.3. Ruff is selected as the primary
+# linter because <see AAP §0.4.1: "10–100× faster than `pylint`">.
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "tests"]
+extend-exclude = [
+  ".venv",
+  "build",
+  "dist",
+  "src/ajit_backprop/db/migrations/versions",
+  "*.egg-info",
+]
+
+[tool.ruff.lint]
+# Rule selection rationale (see AAP §0.6.3 / §0.7.1):
+#   E,W,F   — core pycodestyle + pyflakes
+#   I       — import sorting (replaces isort for code style)
+#   B       — flake8-bugbear (catches likely bugs)
+#   C4      — flake8-comprehensions (Pythonic comprehensions)
+#   UP      — pyupgrade (modernize syntax)
+#   N       — pep8-naming (snake_case discipline; replaces JS camelCase)
+#   S       — flake8-bandit (security rules; supports AAP §0.7.1)
+#   A       — flake8-builtins (avoid shadowing builtins)
+#   RET     — flake8-return (clean returns)
+#   SIM     — flake8-simplify (simpler code)
+#   RUF     — ruff-specific rules
+select = [
+  "E",
+  "W",
+  "F",
+  "I",
+  "B",
+  "C4",
+  "UP",
+  "N",
+  "S",
+  "A",
+  "RET",
+  "SIM",
+  "RUF",
+]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use bare `assert`, which is fine — pytest rewrites assertions.
+"tests/**/*.py" = ["S101"]
+# Auto-generated migrations may have long lines.
+"src/ajit_backprop/db/migrations/**/*.py" = ["E501"]
+# Package init files commonly re-export symbols (F401 = unused import).
+"src/ajit_backprop/**/__init__.py" = ["F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ajit_backprop"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+# =============================================================================
+# Black — opinionated formatter (replaces Prettier)
+# =============================================================================
+# Per AAP §0.5.1 (`[tool.black]`).
+[tool.black]
+line-length = 100
+target-version = ["py313"]
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+    \.venv
+  | build
+  | dist
+  | src/ajit_backprop/db/migrations/versions
+)/
+'''
+
+# =============================================================================
+# Mypy — static type checker (replaces TypeScript `tsc`)
+# =============================================================================
+# Per AAP §0.5.1 (`[tool.mypy]`) and §0.8.2 ("Type discipline: every public
+# function MUST have full type hints; mypy --strict MUST pass with zero
+# errors").
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+warn_unreachable = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+check_untyped_defs = true
+strict_equality = true
+files = ["src/ajit_backprop"]
+mypy_path = "src"
+namespace_packages = true
+explicit_package_bases = true
+show_error_codes = true
+pretty = true
+
+# Tests may use looser typing (especially fixtures and parametrize args).
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+# Third-party packages without bundled type stubs.
+[[tool.mypy.overrides]]
+module = [
+  "torch.*",
+  "factory.*",
+  "factory_boy.*",
+  "freezegun.*",
+  "responses.*",
+  "respx.*",
+  "alembic.*",
+  "loguru.*",
+]
+ignore_missing_imports = true
+
+# =============================================================================
+# Pytest — test runner (replaces Jest / Mocha)
+# =============================================================================
+# Per AAP §0.5.1 (`[tool.pytest.ini_options]`) and §0.4.1 ("pytest over
+# unittest because it has cleaner syntax, better fixtures, and the largest
+# plugin ecosystem").
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = [
+  "-ra",
+  "--strict-markers",
+  "--strict-config",
+  "--cov=ajit_backprop",
+  "--cov-report=term-missing",
+  "--cov-report=xml",
+  "--cov-fail-under=80",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+asyncio_mode = "auto"
+filterwarnings = [
+  "error",
+  "ignore::DeprecationWarning:pytest_asyncio.*",
+  "ignore::DeprecationWarning:torch.*",
+]
+markers = [
+  "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+  "integration: marks integration tests (deselect with '-m \"not integration\"')",
+  "e2e: marks end-to-end tests (deselect with '-m \"not e2e\"')",
+  "unit: marks unit tests",
+]
+
+# =============================================================================
+# Coverage — coverage.py engine configuration
+# =============================================================================
+[tool.coverage.run]
+branch = true
+source = ["src/ajit_backprop"]
+omit = [
+  "*/migrations/*",
+  "*/__main__.py",
+  "*/tests/*",
+]
+parallel = true
+
+[tool.coverage.report]
+# Lines matching any pattern below are excluded from coverage measurement.
+exclude_lines = [
+  "pragma: no cover",
+  "raise NotImplementedError",
+  "if TYPE_CHECKING:",
+  "if __name__ == .__main__.:",
+  "@overload",
+  "def __repr__",
+  "def __str__",
+]
+fail_under = 80
+show_missing = true
+skip_covered = false
+precision = 2
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# =============================================================================
+# Isort — import sorter (used by IDEs / pre-commit; ruff handles in-line)
+# =============================================================================
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["ajit_backprop"]
+src_paths = ["src", "tests"]
+skip_gitignore = true
+combine_as_imports = true
+force_sort_within_sections = true
+
+# =============================================================================
+# Pylint — comprehensive linter (per AAP §0.6.3)
+# =============================================================================
+[tool.pylint.main]
+py-version = "3.13"
+ignore-paths = [
+  "src/ajit_backprop/db/migrations/versions",
+  "\\.venv",
+  "build",
+  "dist",
+]
+jobs = 0
+load-plugins = []
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pylint.basic]
+good-names = ["i", "j", "k", "ex", "_", "x", "y", "z", "n", "m", "db"]
+
+[tool.pylint."messages control"]
+disable = [
+  "missing-module-docstring",
+  "too-few-public-methods",
+  "logging-fstring-interpolation",
+  "duplicate-code",
+]
+
+[tool.pylint.design]
+max-args = 8
+max-attributes = 12
+max-public-methods = 25
+
+# =============================================================================
+# Bandit — security linter (per AAP §0.7.1)
+# =============================================================================
+# Bandit complements ruff's S-rules with deeper security analysis.
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "build", "dist"]
+skips = []
