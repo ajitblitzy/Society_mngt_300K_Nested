@@ -1,4 +1,5 @@
 """mod_7 - society module."""
+
 from society_mgmt._core import mod_compute as _mod_compute
 
 mod_7_0 = _mod_compute
