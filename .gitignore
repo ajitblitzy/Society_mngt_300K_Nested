@@ -1,4 +1,4 @@
-# Python bytecode
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.pyc
 *.pyo
@@ -11,32 +11,24 @@ dist/
 *.egg
 .eggs/
 
+# Pytest / coverage caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+.tox/
+.nox/
+
 # Virtual environments
 .venv/
 venv/
 env/
 ENV/
 
-# pytest / coverage
-.pytest_cache/
-.coverage
-.coverage.*
-htmlcov/
-coverage.xml
-*.cover
-.cache/
-
-# tox / mypy / ruff caches
-.tox/
-.mypy_cache/
-.ruff_cache/
-
-# IDE / editors
+# IDE / editor noise
 .idea/
 .vscode/
 *.swp
 *.swo
-
-# OS
 .DS_Store
-Thumbs.db
