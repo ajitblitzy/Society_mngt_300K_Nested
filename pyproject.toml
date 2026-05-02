@@ -1,30 +1,47 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "society-mgmt"
 version = "0.1.0"
-description = "Python port of the society_mgmt JavaScript codebase (refactored from society_mgmt_300k.zip)."
+description = "Python port of the Ajit-backprop-test JavaScript codebase (society management module family)."
 readme = "README.md"
 requires-python = ">=3.12"
+license = { file = "LICENSE" }
 authors = [
-    { name = "Ajit-backprop-test" },
+    { name = "Ajit-backprop-test contributors" },
 ]
+keywords = ["society-mgmt", "refactor", "python-port", "backprop-test"]
 classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
-    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=9.0.3"]
+dev = [
+    "pytest>=9.0.3",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["society_mgmt*"]
 
 [tool.pytest.ini_options]
 minversion = "9.0"
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "-ra --strict-markers"
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+]
