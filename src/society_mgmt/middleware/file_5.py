@@ -1,4 +1,5 @@
 """mod_5 - society module."""
+
 from society_mgmt._core import mod_compute as _mod_compute
 
 mod_5_0 = _mod_compute
@@ -498,7 +499,6 @@ mod_5_493 = _mod_compute
 mod_5_494 = _mod_compute
 mod_5_495 = _mod_compute
 mod_5_496 = _mod_compute
-
 mod_5_497 = _mod_compute
 mod_5_498 = _mod_compute
 mod_5_499 = _mod_compute
@@ -749,7 +749,6 @@ mod_5_743 = _mod_compute
 mod_5_744 = _mod_compute
 mod_5_745 = _mod_compute
 mod_5_746 = _mod_compute
-
 mod_5_747 = _mod_compute
 mod_5_748 = _mod_compute
 mod_5_749 = _mod_compute
@@ -1000,7 +999,6 @@ mod_5_993 = _mod_compute
 mod_5_994 = _mod_compute
 mod_5_995 = _mod_compute
 mod_5_996 = _mod_compute
-
 mod_5_997 = _mod_compute
 mod_5_998 = _mod_compute
 mod_5_999 = _mod_compute
@@ -1455,7 +1453,6 @@ __all__ = [
     "mod_5_246",
     "mod_5_247",
     "mod_5_248",
-
     "mod_5_249",
     "mod_5_250",
     "mod_5_251",
@@ -1706,7 +1703,6 @@ __all__ = [
     "mod_5_496",
     "mod_5_497",
     "mod_5_498",
-
     "mod_5_499",
     "mod_5_500",
     "mod_5_501",
@@ -1957,7 +1953,6 @@ __all__ = [
     "mod_5_746",
     "mod_5_747",
     "mod_5_748",
-
     "mod_5_749",
     "mod_5_750",
     "mod_5_751",
@@ -2208,7 +2203,6 @@ __all__ = [
     "mod_5_996",
     "mod_5_997",
     "mod_5_998",
-
     "mod_5_999",
     "mod_5_1000",
     "mod_5_1001",
@@ -2411,4 +2405,3 @@ __all__ = [
     "mod_5_1198",
     "mod_5_1199",
 ]
-
