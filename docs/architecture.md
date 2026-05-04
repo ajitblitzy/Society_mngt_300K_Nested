@@ -75,16 +75,16 @@ flowchart TD
 
 ## Module Pages Index
 
-The full list of module pages planned for the documentation tree is enumerated below for table-of-contents completeness. Pages already authored render as resolvable links; pages that have not yet been authored render as plain text annotated with **(coming in next milestone)** and will be promoted to links in a future milestone.
+Each folder listed in [Folder Inventory](#folder-inventory) has a dedicated module page that applies the canonical 9-section template (folder role, files-covered table, link to the universal function pattern in [`api-reference.md`](api-reference.md), the plain-language `6x + 10` outcome, and the performance-neutral verdict pointer to [`performance-analysis.md`](performance-analysis.md)). The full set of module and test pages is enumerated below.
 
-- controllers *(coming in next milestone)*
-- services *(coming in next milestone)*
-- models *(coming in next milestone)*
-- routes *(coming in next milestone)*
-- middleware *(coming in next milestone)*
-- config *(coming in next milestone)*
-- repositories *(coming in next milestone)*
-- domain *(coming in next milestone)*
+- [controllers](modules/controllers.md)
+- [services](modules/services.md)
+- [models](modules/models.md)
+- [routes](modules/routes.md)
+- [middleware](modules/middleware.md)
+- [config](modules/config.md)
+- [repositories](modules/repositories.md)
+- [domain](modules/domain.md)
 - [utils](modules/utils.md)
 - [tests/unit](tests/unit.md)
 - [tests/integration](tests/integration.md)
