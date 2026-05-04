@@ -20,3 +20,5 @@ The implementation is performance-neutral: it contains no caching, batching, par
 - [Architecture](docs/architecture.md) — folder taxonomy and file inventory
 - [API reference](docs/api-reference.md) — universal function pattern and worked examples
 - [Performance analysis](docs/performance-analysis.md) — evidence-based performance verdict
+
+*Source: `society_mgmt_300k.zip` (30 archive entries: 1 LICENSE + 29 `*.js` files); canonical universal function pattern in `src/controllers/file_0.js`.*
