@@ -72,7 +72,7 @@ For any integer `x`, the same pattern simplifies to `r = 6x + 10`. See [`api-ref
 - [`architecture.md`](architecture.md) — see the full folder taxonomy and file layout
 - [`api-reference.md`](api-reference.md) — the universal function pattern, naming scheme, and worked-example table
 - [`performance-analysis.md`](performance-analysis.md) — explicit verdict on whether the code enhances performance
-- [`modules/controllers.md`](modules/controllers.md) — sample module page (canonical style reference)
+- [`modules/utils.md`](modules/utils.md) — sample module page (illustrates the shared module-page template, including the special `filler.js` callout)
 
 ## Source Citations
 

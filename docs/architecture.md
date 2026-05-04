@@ -75,14 +75,16 @@ flowchart TD
 
 ## Module Pages Index
 
-- [controllers](modules/controllers.md)
-- [services](modules/services.md)
-- [models](modules/models.md)
-- [routes](modules/routes.md)
-- [middleware](modules/middleware.md)
-- [config](modules/config.md)
-- [repositories](modules/repositories.md)
-- [domain](modules/domain.md)
+The full list of module pages planned for the documentation tree is enumerated below for table-of-contents completeness. Pages already authored render as resolvable links; pages that have not yet been authored render as plain text annotated with **(coming in next milestone)** and will be promoted to links in a future milestone.
+
+- controllers *(coming in next milestone)*
+- services *(coming in next milestone)*
+- models *(coming in next milestone)*
+- routes *(coming in next milestone)*
+- middleware *(coming in next milestone)*
+- config *(coming in next milestone)*
+- repositories *(coming in next milestone)*
+- domain *(coming in next milestone)*
 - [utils](modules/utils.md)
 - [tests/unit](tests/unit.md)
 - [tests/integration](tests/integration.md)
@@ -93,5 +95,7 @@ flowchart TD
 - `Source: src/controllers/file_0.js` — canonical pattern carrier; line 1 declares `// mod_0 - society module`, line 2 declares `const store = [];`, lines 3+ declare `function mod_0_0(x) … function mod_0_1199(x)`.
 - `Source: src/utils/filler.js` — comment-only filler from `// filler 298001` (line 1) to `// filler 299999` (line 1,999), confirmed by `head -1` and `tail -1`.
 - `Source: src/middleware/file_27.js` — truncated module with reduced function count (705 functions, 6,347 LOC), confirmed by `grep -c "^function mod_" src/middleware/file_27.js` and `wc -l src/middleware/file_27.js`.
+
+---
 
 [Back to docs index](README.md)

@@ -36,14 +36,16 @@ flowchart TD
 
 ## Module Pages
 
-- [controllers](modules/controllers.md) — covers `src/controllers/file_0.js`, `src/controllers/file_11.js`, `src/controllers/file_22.js`
-- [services](modules/services.md) — covers `src/services/file_1.js`, `src/services/file_12.js`, `src/services/file_23.js`
-- [models](modules/models.md) — covers `src/models/file_2.js`, `src/models/file_13.js`, `src/models/file_24.js`
-- [routes](modules/routes.md) — covers `src/routes/file_3.js`, `src/routes/file_14.js`, `src/routes/file_25.js`
-- [middleware](modules/middleware.md) — covers `src/middleware/file_5.js`, `src/middleware/file_16.js`, `src/middleware/file_27.js`
-- [config](modules/config.md) — covers `src/config/file_6.js`, `src/config/file_17.js`
-- [repositories](modules/repositories.md) — covers `src/repositories/file_7.js`, `src/repositories/file_18.js`
-- [domain](modules/domain.md) — covers `src/domain/file_8.js`, `src/domain/file_19.js`
+The full list of module pages planned for the documentation tree is enumerated below for table-of-contents completeness. Pages already authored render as resolvable links; pages that have not yet been authored render as plain text annotated with **(coming in next milestone)** and will be promoted to links in a future milestone. Until then, the [API reference](api-reference.md), [architecture](architecture.md), and [performance analysis](performance-analysis.md) pages — together with [`modules/utils.md`](modules/utils.md) (the sole module page available now) — already document the universal function pattern, the per-folder file inventory, and the per-folder performance verdict for every folder listed below.
+
+- controllers — covers `src/controllers/file_0.js`, `src/controllers/file_11.js`, `src/controllers/file_22.js` *(coming in next milestone)*
+- services — covers `src/services/file_1.js`, `src/services/file_12.js`, `src/services/file_23.js` *(coming in next milestone)*
+- models — covers `src/models/file_2.js`, `src/models/file_13.js`, `src/models/file_24.js` *(coming in next milestone)*
+- routes — covers `src/routes/file_3.js`, `src/routes/file_14.js`, `src/routes/file_25.js` *(coming in next milestone)*
+- middleware — covers `src/middleware/file_5.js`, `src/middleware/file_16.js`, `src/middleware/file_27.js` *(coming in next milestone)*
+- config — covers `src/config/file_6.js`, `src/config/file_17.js` *(coming in next milestone)*
+- repositories — covers `src/repositories/file_7.js`, `src/repositories/file_18.js` *(coming in next milestone)*
+- domain — covers `src/domain/file_8.js`, `src/domain/file_19.js` *(coming in next milestone)*
 - [utils](modules/utils.md) — covers `src/utils/file_4.js`, `src/utils/file_15.js`, `src/utils/file_26.js`, `src/utils/filler.js`
 
 ## Test Pages

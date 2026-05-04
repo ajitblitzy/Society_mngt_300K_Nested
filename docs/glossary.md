@@ -13,7 +13,7 @@ Other documentation pages link to the entries below rather than redefine the ter
 - **Definition:** A function name following the pattern `mod_<file_index>_<position>(x)`, where:
   - `<file_index>` (the `N`) is an integer in the range `0..27` identifying the source file. The numbering follows the order of files inside `society_mgmt_300k.zip` and is **not** contiguous within any one folder. For example, `src/controllers/` contains files with indices `0`, `11`, and `22`; `src/services/` contains `1`, `12`, and `23`; and so on.
   - `<position>` (the `M`) is an integer in the range `0..1199` identifying the function's zero-based position within its file. The truncated module `src/middleware/file_27.js` is the sole exception: it uses positions `0..704` (705 functions total).
-- **Behaviour:** Every `mod_N_M(x)` function returns `6x + 10` for any integer input `x`. The body is identical across all files: `let r=0; r+=x*1; r+=x*2; r+=x*3; if(r%2===0){r+=10} return r;`. See [`api-reference.md`](api-reference.md) for the algebraic derivation and worked examples.
+- **Behaviour:** Every `mod_N_M(x)` function returns `6x + 10` for any integer input `x`. The body is identical across all files (six straight-line statements: an initialiser, three accumulator updates, a parity check, and a return). See [the canonical pattern in `api-reference.md`](api-reference.md#universal-function-pattern) for the byte-exact body, the algebraic derivation, and worked examples.
 - **Examples:** `mod_0_0`, `mod_5_42`, `mod_27_704`.
 - **Source:** `src/controllers/file_0.js:3` (first definition begins with `function mod_0_0(x){`).
 
