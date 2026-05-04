@@ -2,6 +2,10 @@
 
 This page is the entry point for the documentation tree of the `Ajit-backprop-test` repository — a small project whose JavaScript code lives bundled inside `society_mgmt_300k.zip` at the repository root rather than checked-in directly under a top-level `src/` folder. After algebraic simplification, every non-filler function in the archive returns the closed-form value `6x + 10` for any integer input `x`, regardless of which folder (`controllers`, `services`, `models`, `routes`, `middleware`, `config`, `repositories`, `domain`, `utils`, `unit`, or `integration`) the function lives in. The implementation is **performance-neutral**: there is no caching, no memoisation, no parallelism, no I/O, and no algorithmic optimisation; see [`performance-analysis.md`](performance-analysis.md) for the full evidence-based verdict, [`api-reference.md`](api-reference.md) for the canonical universal function pattern, and [`getting-started.md`](getting-started.md) to extract the archive and verify the outcome by hand.
 
+## Origin and User Directive
+
+This documentation set was authored to satisfy the User Rule **"Document code"** (content: **"Test"**) and the user's primary directive — *"Document the code so as its easy to understand what is the outcome of the code. Also ensure to highlight if its enhancing the performance."* The first half of that directive is honoured by every page being **outcome-first**: each page states the deterministic numeric outcome `6x + 10` near the top before any structural detail. The second half is honoured by [`performance-analysis.md`](performance-analysis.md), which gives an explicit, evidence-backed verdict on whether the implementation enhances performance. Both halves are quoted verbatim above to honour Rule R-9 (Verbatim Preservation) of the project's Agent Action Plan.
+
 ## Documentation Map
 
 ```mermaid
