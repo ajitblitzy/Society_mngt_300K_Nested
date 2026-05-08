@@ -5,10 +5,10 @@
   "private": true,
   "main": "src/utils/mod_compute.js",
   "scripts": {
-    "test": "node --test tests/unit/*.js tests/integration/*.js"
+    "test": "node --test tests/"
   },
   "engines": {
-    "node": ">=20.20.2"
+    "node": ">=18.0.0"
   },
   "license": "UNLICENSED"
 }
