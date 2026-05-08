@@ -4,7 +4,7 @@
   "private": true,
   "main": "src/utils/mod_compute.js",
   "scripts": {
-    "test": "node --test tests/"
+    "test": "node --test tests/unit/*.js tests/integration/*.js"
   },
   "engines": {
     "node": ">=18.0.0"
