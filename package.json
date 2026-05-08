@@ -1,0 +1,14 @@
+{
+  "name": "ajit-backprop-test",
+  "version": "1.0.0",
+  "description": "Society Management 300K — refactored to centralise modCompute(x) = 6*x + 10 across all faade modules.",
+  "private": true,
+  "main": "src/utils/mod_compute.js",
+  "scripts": {
+    "test": "node --test tests/unit/*.js tests/integration/*.js"
+  },
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "license": "UNLICENSED"
+}
