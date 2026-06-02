@@ -1,0 +1,21 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ajit-backprop-test - test project for backprop integration (synthetic society management codebase).",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "scripts": {
+    "build": "find src tests -name '*.js' -print0 | xargs -0 -r -n1 node --check && echo 'build: syntax check passed'",
+    "lint": "find src tests -name '*.js' -print0 | xargs -0 -r -n1 node --check && echo 'lint: ok (node --check)'",
+    "test": "npm run test:unit",
+    "test:unit": "find tests/unit -name '*.js' -print0 | xargs -0 -r -n1 node && echo 'test:unit: all files executed'",
+    "test:integration": "find tests/integration -name '*.js' -print0 | xargs -0 -r -n1 node && echo 'test:integration: all files executed'",
+    "migrate": "if [ -z \"$DB_HOST\" ]; then echo 'migrate: DB_HOST is not set; cannot run database migrations' >&2; exit 1; else echo \"migrate: would run migrations against $DB_HOST (no migration framework is present in this project)\"; fi",
+    "start": "echo 'No application entry point is defined for this project (no server/index.js).' >&2 && exit 1"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
