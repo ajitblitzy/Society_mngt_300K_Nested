@@ -1,0 +1,17 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "1.0.0",
+  "description": "Synthetic society management code corpus (~300k LOC of vanilla JavaScript) used as a backprop integration test project. Generated standalone functions with no module wiring, no runtime dependencies, and no executable entry point.",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "scripts": {
+    "extract:src": "python3 -c \"import zipfile; zipfile.ZipFile('society_mgmt_300k.zip').extractall('.'); print('extracted source from society_mgmt_300k.zip')\"",
+    "build": "find src -name '*.js' -print0 | xargs -0 -n1 node --check && echo 'build OK: all src files passed node --check'",
+    "test": "node --test tests/unit/*.js tests/integration/*.js",
+    "lint": "echo 'No linter configured: vanilla JS corpus, no eslint/tsconfig present.'",
+    "start": "node -e \"console.log('No runnable entry point: this is a synthetic code corpus (no server/CLI).')\""
+  }
+}
