@@ -1,0 +1,16 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "1.0.0",
+  "description": "Society Management 300K - test project for backprop integration (auto-generated filler JavaScript modules)",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "main": "src/controllers/file_0.js",
+  "scripts": {
+    "build": "for f in $(find src tests -name '*.js' 2>/dev/null); do node --check \"$f\" || exit 1; done; echo 'Syntax check passed'",
+    "test": "node --test $(find tests -name '*.js' 2>/dev/null)",
+    "test:unit": "node --test $(find tests/unit -name '*.js' 2>/dev/null)"
+  }
+}
