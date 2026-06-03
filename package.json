@@ -1,0 +1,18 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "1.0.0",
+  "description": "Society management synthetic benchmark (~300,000 LOC of dependency-free vanilla JavaScript). Source is delivered in society_mgmt_300k.zip and extracted to src/ and tests/ via `npm run unpack`.",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "scripts": {
+    "unpack": "python3 -c \"import zipfile; zipfile.ZipFile('society_mgmt_300k.zip').extractall('.'); print('unpacked society_mgmt_300k.zip')\"",
+    "prebuild": "[ -d src ] || npm run unpack",
+    "build": "find src tests -name '*.js' -print0 | xargs -0 -n1 node --check && echo 'syntax-check: OK'",
+    "syntax-check": "npm run build",
+    "pretest": "[ -d src ] || npm run unpack",
+    "test": "find tests -name '*.js' -print0 | xargs -0 node --test"
+  }
+}
