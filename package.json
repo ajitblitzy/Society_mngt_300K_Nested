@@ -1,0 +1,17 @@
+{
+  "name": "society-mgmt-300k-nested",
+  "version": "1.0.0",
+  "description": "Synthetic ~300K-line Node.js codebase (society management) used for backprop/scale integration testing. Plain JavaScript with no runtime dependencies and no module system; source is delivered in society_mgmt_300k.zip.",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "scripts": {
+    "extract": "python3 -c \"import zipfile; zipfile.ZipFile('society_mgmt_300k.zip').extractall('.'); print('Source extracted from society_mgmt_300k.zip')\"",
+    "build": "find src tests -type f -name '*.js' -print0 2>/dev/null | xargs -0 -r -n1 -P4 node --check && echo 'Syntax check passed (node --check).'",
+    "check": "npm run build",
+    "lint": "npm run build",
+    "test": "node --test tests"
+  }
+}
