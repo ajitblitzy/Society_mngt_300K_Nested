@@ -1,0 +1,14 @@
+{
+  "name": "ajit-backprop-test",
+  "version": "0.0.0",
+  "private": true,
+  "description": "STUB manifest created during environment setup (early-state). No real package.json had been processed onto this branch yet; project source currently ships as society_mgmt_300k.zip (synthetic JS with no module exports/imports and no test framework). Replace when real manifests are processed.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "scripts": {
+    "build": "node -e \"console.log('[stub manifest] no build step configured')\"",
+    "test": "node -e \"console.log('[stub manifest] no test framework configured')\""
+  }
+}
