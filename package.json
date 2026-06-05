@@ -1,0 +1,12 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "0.0.0",
+  "description": "test project for backprop integration.",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
