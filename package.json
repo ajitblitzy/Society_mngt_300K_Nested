@@ -1,0 +1,27 @@
+{
+  "name": "society_mgmt_300k",
+  "version": "1.0.0",
+  "description": "test project for backprop integration.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ajitblitzy/Society_mngt_300K_Nested.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ajitblitzy/Society_mngt_300K_Nested/issues"
+  },
+  "homepage": "https://github.com/ajitblitzy/Society_mngt_300K_Nested#readme"
+}
