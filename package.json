@@ -1,0 +1,17 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Society management synthetic test project (Ajit-backprop-test). Minimal stub package.json created by the environment-setup agent so the documented npm workflow can run; replace when real project files are processed.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2",
+    "npm": ">=10"
+  },
+  "scripts": {
+    "build": "node -e \"const fs=require('fs'),p=require('path'),vm=require('vm');let n=0;const r=d=>{if(!fs.existsSync(d))return;for(const e of fs.readdirSync(d,{withFileTypes:true})){const f=p.join(d,e.name);if(e.isDirectory())r(f);else if(f.endsWith('.js')){new vm.Script(fs.readFileSync(f,'utf8'),{filename:f});n++}}};['src','tests'].forEach(r);console.log('build OK: compiled '+n+' .js files')\"",
+    "test": "node -e \"const {test}=require('node:test'),fs=require('fs'),p=require('path'),vm=require('vm');const files=[];const r=d=>{if(!fs.existsSync(d))return;for(const e of fs.readdirSync(d,{withFileTypes:true})){const f=p.join(d,e.name);if(e.isDirectory())r(f);else if(f.endsWith('.js'))files.push(f)}};r('tests');if(!files.length){console.log('no test files found');process.exit(0)}for(const f of files){test('compiles '+f,()=>{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f})})}\""
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
