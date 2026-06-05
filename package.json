@@ -1,0 +1,14 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "1.0.0",
+  "description": "Society management synthetic codebase (extracted from society_mgmt_300k.zip). Baseline package.json created during environment setup so the npm-based workflow (install/build/test) can run. The source declares no application dependencies, module system, or test framework.",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "scripts": {
+    "build": "find src tests -name '*.js' -print0 | xargs -0 -r -n1 node --check",
+    "test": "node --test tests/unit/*.js tests/integration/*.js"
+  }
+}
