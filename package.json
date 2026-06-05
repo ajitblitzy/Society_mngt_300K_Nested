@@ -1,0 +1,19 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "1.0.0",
+  "description": "Synthetic society-management code fixture (~300K LOC, auto-generated). package.json/build/test config authored by the Blitzy setup agent to enable the npm install/build/test workflow specified in the environment setup instructions. No application source was modified.",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "build": "node -e \"const fs=require('fs'),cp=require('child_process'),path=require('path');function walk(d){let o=[];for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())o=o.concat(walk(p));else if(p.endsWith('.js'))o.push(p)}return o}const files=fs.existsSync('src')?walk('src'):[];let bad=0;for(const f of files){try{cp.execFileSync(process.execPath,['--check',f],{stdio:'pipe'})}catch(e){bad++;console.error('SYNTAX ERROR: '+f)}}console.log('build: syntax-checked '+files.length+' file(s); '+bad+' error(s)');process.exit(bad?1:0)\"",
+    "test": "jest --ci"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": ["**/tests/**/*.js"],
+    "transform": {}
+  }
+}
