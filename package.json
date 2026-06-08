@@ -1,0 +1,16 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "1.0.0",
+  "description": "Ajit-backprop-test - test project for backprop integration (society_mgmt_300k synthetic fixture).",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "scripts": {
+    "build": "node -e \"const fs=require('fs'),cp=require('child_process'),path=require('path');let n=0;const walk=d=>fs.readdirSync(d,{withFileTypes:true}).forEach(e=>{const p=path.join(d,e.name);if(e.isDirectory())walk(p);else if(p.endsWith('.js')){cp.execFileSync(process.execPath,['--check',p],{stdio:['ignore','ignore','inherit']});n++;}});walk('src');console.log('build OK: node --check passed for '+n+' src JS files');\"",
+    "test": "node --test tests/"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
