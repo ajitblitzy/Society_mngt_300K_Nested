@@ -1,0 +1,14 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Synthetic ~300K-line society management fixture (backprop/scale test). Standalone generated JS modules under src/ and tests/; no third-party dependencies.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "scripts": {
+    "build": "node -e \"const fs=require('fs'),path=require('path'),vm=require('vm');const root='src';if(!fs.existsSync(root)){console.log('No src/ directory found - extract society_mgmt_300k.zip into the repo root first');process.exit(0);}let n=0,bad=0;const walk=d=>{for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory()){walk(p);}else if(e.name.endsWith('.js')){n++;try{new vm.Script(fs.readFileSync(p,'utf8'),{filename:p});}catch(err){bad++;console.error('SYNTAX ERROR in '+p+': '+err.message);}}}};walk(root);console.log('build: syntax-checked '+n+' file(s) under src/, '+bad+' syntax error(s)');process.exit(bad>0?1:0);\"",
+    "test": "node -e \"const fs=require('fs'),path=require('path'),vm=require('vm');const root='tests';if(!fs.existsSync(root)){console.log('No tests/ directory found - extract society_mgmt_300k.zip into the repo root first');process.exit(0);}let n=0,bad=0;const walk=d=>{for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory()){walk(p);}else if(e.name.endsWith('.js')){n++;try{new vm.Script(fs.readFileSync(p,'utf8'),{filename:p});}catch(err){bad++;console.error('SYNTAX ERROR in '+p+': '+err.message);}}}};walk(root);console.log('test: validated '+n+' test file(s) under tests/, '+bad+' syntax error(s). NOTE: no assertion/test framework present (generated fixture) - parse/smoke check only');process.exit(bad>0?1:0);\""
+  }
+}
