@@ -1,0 +1,14 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Society management synthetic test project (backprop integration). Setup-agent stub manifest created because the delivered codebase shipped no package.json. No third-party dependencies are required. 'build' performs JavaScript syntax validation across src/, and 'test' invokes the Node.js built-in test runner against tests/.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "scripts": {
+    "build": "find src -name '*.js' -print0 | xargs -0 -r -n1 node --check",
+    "test": "node --test tests/unit/*.js tests/integration/*.js"
+  }
+}
