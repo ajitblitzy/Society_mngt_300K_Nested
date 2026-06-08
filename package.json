@@ -1,0 +1,16 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "1.0.0",
+  "description": "Synthetic Node.js codebase (Society Management, ~300K LOC) used for backprop integration testing. Application source is delivered via society_mgmt_300k.zip and extracted into src/ and tests/. The project is dependency-free: 'build' performs syntax validation with `node --check` and 'test' uses the Node.js built-in test runner.",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "scripts": {
+    "build": "for f in $(find src -name '*.js' 2>/dev/null); do node --check \"$f\" || exit 1; done; echo BUILD_OK",
+    "lint": "for f in $(find src tests -name '*.js' 2>/dev/null); do node --check \"$f\" || exit 1; done; echo LINT_OK",
+    "test": "node --test $(find tests -name '*.js' 2>/dev/null | sort)",
+    "validate": "npm run build && npm run test"
+  }
+}
