@@ -1,0 +1,13 @@
+{
+  "source": {
+    "include": ["src", "tests"],
+    "includePattern": ".+\\.js$",
+    "excludePattern": "(node_modules/|docs/)"
+  },
+  "sourceType": "script",
+  "plugins": [],
+  "opts": {
+    "encoding": "utf8",
+    "recurse": true
+  }
+}
