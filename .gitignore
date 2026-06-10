@@ -5,6 +5,8 @@ node_modules/
 .env
 .env.local
 .env.*.local
+# Keep the committed template tracked even if the .env globs broaden later.
+!.env.example
 
 # Lockfile (regenerable; left untracked during early setup, regenerate via `npm install`)
 package-lock.json
