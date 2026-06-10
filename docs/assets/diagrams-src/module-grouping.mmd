@@ -1,0 +1,18 @@
+flowchart TB
+    subgraph SRC["src/ — application layers"]
+        direction TB
+        C["controllers<br/>mod_0, mod_11, mod_22"]
+        S["services<br/>mod_1, mod_12, mod_23"]
+        M["models<br/>mod_2, mod_13, mod_24"]
+        R["routes<br/>mod_3, mod_14, mod_25"]
+        U["utils<br/>mod_4, mod_15, mod_26"]
+        MW["middleware<br/>mod_5, mod_16, mod_27"]
+        CF["config<br/>mod_6, mod_17"]
+        RP["repositories<br/>mod_7, mod_18"]
+        D["domain<br/>mod_8, mod_19"]
+    end
+    subgraph TST["tests/ — test layers"]
+        direction TB
+        UT["unit<br/>mod_9, mod_20"]
+        IT["integration<br/>mod_10, mod_21"]
+    end

@@ -1,0 +1,5 @@
+flowchart LR
+    A["Author Markdown<br/>docs/**/*.md"] --> B["docs:api<br/>jsdoc2md generates<br/>per-identity API tables"]
+    B --> C["docs:diagrams<br/>mmdc renders<br/>Mermaid to SVG"]
+    C --> D["docs:pdf<br/>md-to-pdf concatenates<br/>ordered Markdown"]
+    D --> E["Society-Management-Documentation.pdf"]
