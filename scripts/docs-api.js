@@ -91,13 +91,17 @@ function toCell(value) {
  * return)" (§0.4.1).
  *
  * @param {object[]} functions - Function identifiers from `getTemplateData`.
- * @returns {string} The Markdown `## Functions` section.
+ * @returns {string} The Markdown API table block — the function count followed
+ *   by the per-function table (no enclosing heading).
  */
 function buildApiTable(functions) {
+	// The generated table is inserted directly beneath each authored page's
+	// "## API Reference" heading (whose prose already introduces "the table
+	// below"), so no additional "## Functions" sub-heading is emitted here — that
+	// would render as a redundant second heading. Only the function count and the
+	// table itself are produced.
 	const header = [
-		'## Functions',
-		'',
-		`Total functions: ${functions.length}`,
+		`**Total functions:** ${functions.length}`,
 		'',
 		'| Function | Parameters | Returns | Description |',
 		'| --- | --- | --- | --- |',
@@ -122,6 +126,65 @@ function buildApiTable(functions) {
 	});
 
 	return [...header, ...rows, ''].join('\n');
+}
+
+/** Sentinel opening the generated API-table region in an authored page. */
+const GENERATED_BEGIN = '<!-- BEGIN GENERATED API TABLE -->';
+
+/** Sentinel closing the generated API-table region in an authored page. */
+const GENERATED_END = '<!-- END GENERATED API TABLE -->';
+
+/** The bare insertion marker authored into each per-identity page. */
+const API_MARKER = '<!-- docs:api -->';
+
+/** Matches a previously generated region, for idempotent in-place replacement. */
+const GENERATED_REGION_RE = /<!-- BEGIN GENERATED API TABLE -->[\s\S]*?<!-- END GENERATED API TABLE -->/;
+
+/**
+ * Fill an authored per-identity page's API insertion point with the generated
+ * table, preserving every other authored section.
+ *
+ * Each authored page carries a single `<!-- docs:api -->` marker between its
+ * "API Reference" prose and its "Example" section. This is the build seam:
+ *
+ *   - First build: the bare marker is replaced by the generated table wrapped in
+ *     `<!-- BEGIN GENERATED API TABLE -->` / `<!-- END GENERATED API TABLE -->`
+ *     sentinels. All other authored content (title, overview, uniform contract,
+ *     example, source citation, navigation links) is left untouched.
+ *   - Subsequent builds: the previously generated region (between the sentinels)
+ *     is replaced in place, so `docs:api` is idempotent and never appends a
+ *     second table or re-introduces the bare marker.
+ *
+ * The sentinels intentionally do not contain the literal `<!-- docs:api -->`
+ * marker text, so a filled page exposes no unresolved insertion marker.
+ *
+ * This replaces the previous behaviour, which rebuilt each page from scratch and
+ * wrote it wholesale — discarding the authored sections and never resolving the
+ * marker (the CP review's M-1 / P-1..P-28 finding).
+ *
+ * @param {string} pageMarkdown - Current contents of the authored page.
+ * @param {string} tableMarkdown - Generated table block from `buildApiTable`.
+ * @param {string} outputPath - Page path, used only for clear error messages.
+ * @returns {string} The page contents with the generated table region filled in.
+ */
+function fillApiMarker(pageMarkdown, tableMarkdown, outputPath) {
+	const block = `${GENERATED_BEGIN}\n${tableMarkdown.trim()}\n${GENERATED_END}`;
+
+	if (GENERATED_REGION_RE.test(pageMarkdown)) {
+		// Idempotent re-run: swap the previously generated region in place.
+		return pageMarkdown.replace(GENERATED_REGION_RE, block);
+	}
+	if (pageMarkdown.includes(API_MARKER)) {
+		// First run: replace the authored bare marker, keeping all other content.
+		return pageMarkdown.replace(API_MARKER, block);
+	}
+
+	const relative = outputPath.split(path.sep).join('/');
+	throw new Error(
+		`No \`${API_MARKER}\` marker or generated region found in ${relative}; ` +
+			'refusing to insert the API table because the page has no defined build ' +
+			'seam (the authored page may be missing or malformed).'
+	);
 }
 
 /**
@@ -273,17 +336,28 @@ async function main() {
 			const table = renderInWorker(relativePath, scopedConfig);
 
 			const outputPath = outputPathFor(relativePath, identity);
-			fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+			if (!fs.existsSync(outputPath)) {
+				// The per-identity pages are authored content (overview, uniform
+				// contract, example, source citation) with a `<!-- docs:api -->`
+				// seam; this script fills that seam rather than creating pages. A
+				// missing page is a real misconfiguration, not something to paper
+				// over by writing a bare stub, so fail loudly.
+				throw new Error(
+					`Authored page not found for ${identity}: ` +
+						`${outputPath.split(path.sep).join('/')}. docs:api fills the ` +
+						`\`${API_MARKER}\` marker inside an existing authored page and ` +
+						'does not generate pages from scratch.'
+				);
+			}
 
-			// Prepend a factual title + source citation (AAP §0.9.1 citation
-			// requirement), then the generated JSDoc API table.
-			const layer = path
-				.relative(API_REFERENCE_DIR, path.dirname(outputPath))
-				.split(path.sep)
-				.join('/');
-			const page = `# ${identity}\n\n_Layer: ${layer} · Source: ${relativePath}_\n\n${table.trimStart()}`;
-
-			fs.writeFileSync(outputPath, page, 'utf8');
+			// Fill the authored page's insertion marker with the generated table,
+			// preserving every other authored section. Replacing only the marker
+			// region keeps the title, overview, uniform-contract description,
+			// example and source citation exactly as authored (AAP §0.4.1 /
+			// §0.9.1) — fixing the previous wholesale overwrite (M-1).
+			const existingPage = fs.readFileSync(outputPath, 'utf8');
+			const updatedPage = fillApiMarker(existingPage, table, outputPath);
+			fs.writeFileSync(outputPath, updatedPage, 'utf8');
 			generated += 1;
 			console.log(`  ${relativePath} -> ${outputPath.split(path.sep).join('/')}`);
 		}

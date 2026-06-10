@@ -58,7 +58,7 @@ graph TD
 
 ![Per-layer module grouping](../assets/diagrams/module-grouping.svg)
 
-*Diagram source: the Mermaid fenced block on this page (`docs/api-reference/index.md`), rendered to `../assets/diagrams/module-grouping.svg` by `npm run docs:diagrams`.* That rendered SVG is a **generated, git-ignored** build output — it is produced by the build rather than committed, so until the build runs `docs/assets/diagrams/` holds only its tracked `.gitkeep` placeholder; see [Documentation Assets](../assets/README.md) for the diagram source → SVG mapping.
+*Diagram source: the Mermaid fenced block on this page (`docs/api-reference/index.md`), rendered to `../assets/diagrams/module-grouping.svg` by `npm run docs:diagrams`.* That rendered SVG is a **generated, committed** build output — `mmdc` produces it during `npm run docs:diagrams` and it is committed as a documentation deliverable, so the consolidated PDF embeds it and the Markdown link-check resolves against it; see [Documentation Assets](../assets/README.md) for the diagram source → SVG mapping.
 
 ## Module catalog
 

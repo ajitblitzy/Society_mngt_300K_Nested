@@ -9,8 +9,11 @@ This directory holds **generated** visual assets for the Society Management docu
 ```text
 docs/assets/
 ├── README.md          # this explainer (hand-authored; tracked)
-└── diagrams/          # rendered *.svg output from mmdc — generated (gitignored)
-    └── .gitkeep       # tracked placeholder anchor so the directory exists in git
+└── diagrams/          # rendered *.svg output from mmdc — generated & committed
+    ├── .gitkeep              # placeholder anchor so the directory exists in git
+    ├── structure.svg         # repository / layer structure (committed deliverable)
+    ├── module-grouping.svg   # per-layer module grouping (committed deliverable)
+    └── build-pipeline.svg    # documentation build → PDF pipeline (committed deliverable)
 ```
 
 There is **no `diagrams-src/` directory**. The source of each diagram is the fenced `mermaid` block authored **directly in its documentation page** — the Markdown pages are the single source of truth, so the diagrams stay co-located with the prose that explains them.
@@ -29,11 +32,11 @@ Three diagrams are produced. Each is authored in — and rendered from — the d
 
 To change a diagram, edit the `mermaid` block **in its source page** (`architecture/overview.md`, `api-reference/index.md`, or `guides/pdf-export.md`) and rebuild — never edit a generated `.svg` directly, since it is overwritten on the next build.
 
-## Generated & gitignored — with a tracked placeholder
+## Generated & committed — with a tracked directory anchor
 
-> **The rendered `.svg` files in `diagrams/` are git-ignored.** They are regenerated on every build, so they are **not committed**. Do **not** hand-create or commit `.svg` files here — `mmdc` produces them at build time.
+> **The three rendered `.svg` files in `diagrams/` are committed deliverables.** `mmdc` regenerates them on every build, and the refreshed output is committed so the consolidated PDF embeds them and the Markdown link-check resolves against them. Do **not** hand-draw or hand-edit them — they are overwritten on the next build; to change a diagram, edit the `mermaid` block in its source page (see above) and rebuild.
 
-The `diagrams/` directory itself is kept in version control by a single tracked placeholder, **`diagrams/.gitkeep`**. The repository's [`.gitignore`](../../.gitignore) ignores the directory's *contents* (`docs/assets/diagrams/*`) but re-includes the placeholder with a negation (`!docs/assets/diagrams/.gitkeep`), so the empty output directory exists in a fresh checkout while every rendered SVG stays untracked. The tracked anchors that keep `docs/assets/` in version control are therefore **this README** and **`diagrams/.gitkeep`**.
+The repository's [`.gitignore`](../../.gitignore) ignores the directory's *contents* (`docs/assets/diagrams/*`) by default, then re-includes the canonical deliverables with explicit negations — **`!.gitkeep`** plus **`!structure.svg`**, **`!module-grouping.svg`**, and **`!build-pipeline.svg`** — so those three rendered SVGs (and the `.gitkeep` directory anchor) stay tracked while any stray or intermediate output in the directory remains untracked. The tracked files under `docs/assets/` are therefore **this README**, **`diagrams/.gitkeep`**, and the **three committed diagram SVGs**.
 
 ## Regeneration & consistency
 

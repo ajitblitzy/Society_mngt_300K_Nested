@@ -65,7 +65,7 @@ The documentation build renders this diagram to SVG via `npm run docs:diagrams` 
 
 ![Repository / layer structure](../assets/diagrams/structure.svg)
 
-*Diagram source: the Mermaid fenced block on this page (`docs/architecture/overview.md`), rendered to `../assets/diagrams/structure.svg` by `npm run docs:diagrams`.* That rendered SVG is a **generated, git-ignored** build output — it is produced by the build rather than committed, so until the build runs `docs/assets/diagrams/` holds only its tracked `.gitkeep` placeholder; see [Documentation Assets](../assets/README.md) for the diagram source → SVG mapping.
+*Diagram source: the Mermaid fenced block on this page (`docs/architecture/overview.md`), rendered to `../assets/diagrams/structure.svg` by `npm run docs:diagrams`.* That rendered SVG is a **generated, committed** build output — `mmdc` produces it during `npm run docs:diagrams` and it is committed as a documentation deliverable, so the consolidated PDF embeds it and the Markdown link-check resolves against it; see [Documentation Assets](../assets/README.md) for the diagram source → SVG mapping.
 
 ## See Also
 

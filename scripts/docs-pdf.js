@@ -44,6 +44,43 @@ const CONFIG_PATH = path.join(ROOT, 'pdf.config.json');
 const PAGE_BREAK = '\n\n<div style="page-break-before: always;"></div>\n\n';
 
 /**
+ * Rewrite a single Markdown document's relative image paths so they remain valid
+ * after every page is concatenated into one document and rendered from the
+ * repository root.
+ *
+ * `md-to-pdf` serves `basedir` (set to the repository root by this script) over
+ * a local HTTP server and resolves relative resource URLs against that root.
+ * Authored pages reference diagrams relative to their OWN location (e.g.
+ * `docs/architecture/overview.md` links `../assets/diagrams/structure.svg`), so
+ * once the pages are concatenated those `../` paths no longer resolve against the
+ * server root. Each Markdown image target is therefore resolved against its
+ * source document's directory and re-expressed as a repository-root-relative,
+ * forward-slash path (e.g. `docs/assets/diagrams/structure.svg`), which the file
+ * server serves correctly so the rendered diagrams embed in the PDF. External
+ * URLs (http/https/data/protocol-relative) and absolute paths are left untouched.
+ *
+ * Only image syntax (`![alt](target)`) is rewritten; ordinary links are left
+ * as-is, since cross-document `.md` links are not resolvable resources in the
+ * single concatenated PDF and rewriting them is unnecessary.
+ *
+ * @param {string} markdown - The source document's Markdown content.
+ * @param {string} docDir - Absolute path to the source document's directory.
+ * @returns {string} The Markdown with image targets rewritten root-relative.
+ */
+function rewriteImagePaths(markdown, docDir) {
+	const IMAGE_RE = /(!\[[^\]]*\]\()([^)\s]+)((?:\s+"[^"]*")?\))/g;
+	const EXTERNAL_OR_ABSOLUTE = /^(?:[a-z][a-z0-9+.-]*:|\/\/|\/|[a-zA-Z]:[\\/])/;
+	return markdown.replace(IMAGE_RE, (match, open, url, close) => {
+		if (EXTERNAL_OR_ABSOLUTE.test(url)) {
+			return match;
+		}
+		const absolute = path.resolve(docDir, url);
+		const rootRelative = path.relative(ROOT, absolute).split(path.sep).join('/');
+		return `${open}${rootRelative}${close}`;
+	});
+}
+
+/**
  * Load and validate the PDF assembly configuration.
  *
  * @returns {{documents: string[], dest: string, mdOptions: object}} Parsed config.
@@ -88,7 +125,11 @@ function assembleMarkdown(documents) {
 	for (const relativePath of documents) {
 		const absolutePath = path.join(ROOT, relativePath);
 		if (fs.existsSync(absolutePath)) {
-			sections.push(fs.readFileSync(absolutePath, 'utf8').trimEnd());
+			const raw = fs.readFileSync(absolutePath, 'utf8').trimEnd();
+			// Rewrite each page's relative image paths to be repository-root
+			// relative so they still resolve against the md-to-pdf file server
+			// (rooted at `basedir`/ROOT) once all pages are concatenated.
+			sections.push(rewriteImagePaths(raw, path.dirname(absolutePath)));
 			included.push(relativePath);
 		} else {
 			missing.push(relativePath);
