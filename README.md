@@ -12,21 +12,27 @@ planned.
 ## Project status
 
 This repository is being migrated from JavaScript to Python in stages. **The
-current foundation is in place:**
+following is in place today:**
 
 - the single canonical implementation, `society_compute(x)`, in
   `src/society_mgmt/core.py`;
 - the `src`-layout package skeleton — the `society_mgmt` package, its nine layer
-  sub-packages, and the `tests` package tree (each currently containing only its
-  `__init__.py` marker); and
+  sub-packages, and the `tests` package tree;
+- the **name-preserving `mod_N_K` binding modules**
+  (`src/society_mgmt/<layer>/file_*.py`) — **28,305** bindings across the 24
+  production modules in the nine layers, each delegating to `society_compute`
+  (see **Overview — what changed** for how this number is derived); and
 - project packaging and tooling configuration: `pyproject.toml`,
   `requirements.txt`, `.gitignore`, and `LICENSE`.
 
-**Planned for subsequent checkpoints:** the name-preserving `mod_N_K` binding
-modules (`src/society_mgmt/<layer>/file_*.py`) and the genuine `pytest`
-equivalence test suite (`tests/unit/test_file_*.py`,
-`tests/integration/test_file_*.py`). Sections below mark anything that depends
-on those not-yet-created files as **(planned)**.
+**Planned for a subsequent checkpoint:** the genuine `pytest` equivalence test
+suite. The four JavaScript *test-source* modules become real pytest tests
+rather than binding modules — `tests/unit/file_9.js` →
+`tests/unit/test_file_9.py`, `tests/unit/file_20.js` →
+`tests/unit/test_file_20.py`, `tests/integration/file_10.js` →
+`tests/integration/test_file_10.py`, and `tests/integration/file_21.js` →
+`tests/integration/test_file_21.py`. Sections below mark anything that depends
+on those not-yet-created test files as **(planned)**.
 
 ---
 
@@ -47,17 +53,20 @@ in the **same repository**, applying the following changes:
   single canonical function, `society_compute(x)`, in
   `src/society_mgmt/core.py`. This removes roughly **300,000 lines** of
   duplicated and dead code.
-- **API preservation _(planned)_.** Every original `mod_N_K` name will be
-  retained as a thin, name-preserving binding that delegates to
+- **API preservation.** Every original `mod_N_K` name from the **24 production
+  modules** is retained as a thin, name-preserving binding that delegates to
   `society_compute`, so every public function remains importable and returns
-  identical values. These binding modules are added in a subsequent checkpoint
-  (see [Project status](#project-status)).
+  identical values. This is **28,305** bindings across the nine layers — see
+  **How the counts break down** below.
 - **Dead-code elimination.** The comment-only padding file (`filler.js`) and the
   unused `const store = []` declaration in every module are dropped — they are
   not carried into the Python package.
-- **Real tests _(planned)_.** The source "test" files contained no assertions;
-  they are replaced with genuine `pytest` equivalence tests that prove
-  behavioral parity. The test suite is added in a subsequent checkpoint.
+- **Real tests _(planned)_.** The four JavaScript *test-source* modules
+  (`file_9`, `file_20` in `tests/unit/`; `file_10`, `file_21` in
+  `tests/integration/`) contained no assertions; they are replaced with genuine
+  `pytest` equivalence tests that prove behavioral parity. That suite is added
+  in a subsequent checkpoint — these four modules are **not** turned into
+  `mod_N_K` binding modules.
 
 > **A note on "performance."** The functions are pure, constant-time (`O(1)`)
 > arithmetic — there are no loops, I/O, database, or network operations to
@@ -65,6 +74,25 @@ in the **same repository**, applying the following changes:
 > ~300,000 lines of duplicated and dead code and shipping a single, minimal,
 > idiomatic implementation. The per-call result is already computed in closed
 > form, so no algorithmic speedup is claimed or needed.
+
+### How the counts break down
+
+The **33,105** figure is the total number of `mod_N_K` functions across **all
+28** JavaScript module files in the original archive. Those 28 files split into
+two groups:
+
+| Group | Source files | Functions | Becomes |
+|-------|--------------|-----------|---------|
+| Production modules (nine layers) | 24 files | **28,305** | Name-preserving binding modules under `src/society_mgmt/<layer>/` |
+| Test-source modules | 4 files — `file_9`, `file_20` (unit); `file_10`, `file_21` (integration) | **4,800** | Genuine `pytest` equivalence tests _(planned)_ |
+
+So the in-scope, name-preserving public surface implemented as importable
+bindings is **28,305** (= 33,105 − 4,800), **not** 33,105: the 4,800 functions
+in the four test-source modules are reproduced as real test assertions rather
+than as callable bindings. (`filler.js` contributes no functions and is
+dropped.) The per-layer counts are: `controllers`, `services`, `models`,
+`routes`, and `utils` = 3,600 each; `middleware` = 3,105 (`file_27` has 705);
+`config`, `repositories`, and `domain` = 2,400 each.
 
 ### The function contract
 
@@ -92,8 +120,10 @@ structural fidelity with the original source — they carry **no** MVC,
 data-access, routing, or configuration behavior, because none existed in the
 source to preserve.
 
-**Current layout (this checkpoint).** Each layer sub-package currently contains
-only its `__init__.py` marker; the canonical implementation lives in `core.py`:
+**Current layout.** The canonical implementation lives in `core.py`, and every
+layer sub-package now contains its name-preserving `mod_N_K` binding modules.
+The `tests/` tree currently holds only its package markers (the `pytest` suite
+is planned — see below):
 
 ```
 .
@@ -106,45 +136,32 @@ only its `__init__.py` marker; the canonical implementation lives in `core.py`:
 │   └── society_mgmt/
 │       ├── __init__.py         # re-exports society_compute
 │       ├── core.py             # society_compute(x) — the single canonical implementation
-│       ├── controllers/        # __init__.py
-│       ├── services/           # __init__.py
-│       ├── models/             # __init__.py
-│       ├── routes/             # __init__.py
-│       ├── utils/              # __init__.py
-│       ├── middleware/         # __init__.py
-│       ├── config/             # __init__.py
-│       ├── repositories/       # __init__.py
-│       └── domain/             # __init__.py
+│       ├── controllers/        # __init__.py + file_0.py, file_11.py, file_22.py
+│       ├── services/           # __init__.py + file_1.py, file_12.py, file_23.py
+│       ├── models/             # __init__.py + file_2.py, file_13.py, file_24.py
+│       ├── routes/             # __init__.py + file_3.py, file_14.py, file_25.py
+│       ├── utils/              # __init__.py + file_4.py, file_15.py, file_26.py
+│       ├── middleware/         # __init__.py + file_5.py, file_16.py, file_27.py
+│       ├── config/             # __init__.py + file_6.py, file_17.py
+│       ├── repositories/       # __init__.py + file_7.py, file_18.py
+│       └── domain/             # __init__.py + file_8.py, file_19.py
 └── tests/
     ├── __init__.py
-    ├── unit/                   # __init__.py
-    └── integration/            # __init__.py
+    ├── unit/                   # __init__.py   (test_file_9.py, test_file_20.py — planned)
+    └── integration/            # __init__.py   (test_file_10.py, test_file_21.py — planned)
 ```
 
-**Planned final layout _(subsequent checkpoints)_.** The name-preserving
-`mod_N_K` binding modules and the genuine `pytest` equivalence tests are added
-to the same skeleton later. When complete, the per-layer binding modules and
-test files appear as:
+**Planned additions _(subsequent checkpoint)_.** Only the genuine `pytest`
+equivalence tests remain to be added to the `tests/` tree:
 
 ```
-src/
-└── society_mgmt/
-    ├── controllers/        # + file_0.py, file_11.py, file_22.py
-    ├── services/           # + file_1.py, file_12.py, file_23.py
-    ├── models/             # + file_2.py, file_13.py, file_24.py
-    ├── routes/             # + file_3.py, file_14.py, file_25.py
-    ├── utils/              # + file_4.py, file_15.py, file_26.py
-    ├── middleware/         # + file_5.py, file_16.py, file_27.py
-    ├── config/             # + file_6.py, file_17.py
-    ├── repositories/       # + file_7.py, file_18.py
-    └── domain/             # + file_8.py, file_19.py
 tests/
 ├── unit/                   # + test_file_9.py, test_file_20.py
 └── integration/            # + test_file_10.py, test_file_21.py
 ```
 
-Once added, each per-layer module will import the canonical implementation and
-re-expose its original function names as thin bindings — for example:
+Each per-layer module imports the canonical implementation and re-exposes its
+original function names as thin, name-preserving bindings — for example:
 
 ```python
 from society_mgmt.core import society_compute
@@ -231,12 +248,10 @@ from society_mgmt import society_compute
 society_compute(2)   # -> 22
 ```
 
-**(Planned)** Once the binding modules are added (see
-[Project status](#project-status)), every original `mod_N_K` name will be
-importable and will return the same value — for example:
+Every original `mod_N_K` name is importable now and returns the same value as
+`society_compute` — for example:
 
 ```python
-# Available after the binding modules are added in a subsequent checkpoint:
 from society_mgmt.controllers import file_0
 
 file_0.mod_0_0(2)    # -> 22  (name-preserving binding delegates to society_compute)
