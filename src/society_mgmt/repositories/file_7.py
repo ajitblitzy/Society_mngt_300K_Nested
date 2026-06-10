@@ -1,28 +1,10 @@
 """mod_7 - society module (repositories layer).
 
 Name-preserving bindings ported from the original ``src/repositories/file_7.js``.
-Each ``mod_7_K`` re-exposes its original public name while delegating to
-:func:`society_mgmt.core.society_compute`, so the arithmetic exists exactly once
-(DRY / Extract-Function) instead of being duplicated across the 1,200
-byte-identical JavaScript functions. The source module's unused module-level
-state declaration is dropped as dead code.
-
-``repositories`` is a structural label only: this module carries no data-access,
-persistence, or Repository-pattern behavior, because none existed in the source.
-
-Behavioral contract (preserved):
-    ``r = x * 1 + x * 2 + x * 3`` (i.e. ``6 * x``), then ``+10`` when ``r`` is
-    even. For integer ``x`` the intermediate ``6 * x`` is always even, so the
-    ``+10`` always applies; for non-integer ``x`` the parity test genuinely
-    governs whether ``10`` is added.
-
-Parity boundaries (documented; JS quirks intentionally NOT replicated):
-    * Precision: JavaScript ``Number`` is an IEEE-754 double and loses precision
-      above ``2**53``; Python ``int`` is exact and therefore more correct. The
-      contract is pinned to the safe-integer domain.
-    * Type coercion: JavaScript implicitly coerces ``"5" * 1`` to ``5``; Python
-      does not. The contract is numeric-domain only, so passing a ``str`` raises
-      ``TypeError`` (Pythonic explicitness), which is expected.
+Each ``mod_7_K`` delegates to :func:`society_mgmt.core.society_compute`, so the
+arithmetic exists exactly once (DRY). ``repositories`` is a structural label only
+and carries no data-access or persistence behavior (none existed in the source);
+the behavioral contract is documented centrally in :mod:`society_mgmt.core`.
 """
 
 from society_mgmt.core import society_compute
