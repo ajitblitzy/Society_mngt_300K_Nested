@@ -22,6 +22,14 @@
 // `null`, or `undefined` values). This makes the serializer trivially
 // unit-testable and safe to call from any layer.
 //
+// CSV INJECTION SAFE (CWE-1236): report rows can carry user-influenced data (member
+// names, free-text notes, ...), so every field is also checked for a leading
+// spreadsheet formula trigger (`=`, `+`, `-`, `@`, ignoring any leading whitespace)
+// and neutralized with an apostrophe prefix BEFORE RFC 4180 quoting. A hostile value
+// like `=2+2` or `=HYPERLINK("http://evil","x")` is therefore rendered as inert text
+// (`'=2+2`) when the file is opened in a spreadsheet, instead of executing. See
+// {@link escapeCsvValue}.
+//
 // CommonJS only: wiring is via `module.exports` (no ESM `import`/`export`). The
 // existing scaffold `file_*.js` / `src/utils/filler.js` modules are read-only
 // filler and are neither referenced nor imported here (AAP 0.6.2).
@@ -49,6 +57,30 @@
 const MUST_QUOTE = /[",\r\n]/;
 
 /**
+ * Detects a value that a spreadsheet application (Excel, LibreOffice Calc, Google
+ * Sheets, ...) could interpret as a FORMULA rather than literal text - the CSV /
+ * "formula" injection risk (CWE-1236). It matches when the first NON-whitespace
+ * character is one of the spreadsheet formula triggers `=`, `+`, `-`, or `@`. Leading
+ * whitespace (spaces, tabs, CR/LF) is skipped via `^\s*`, so a value such as
+ * `'   =1+1'` or `'\t=cmd'` is still recognized as formula-leading. Compiled once at
+ * module load and used by {@link escapeCsvValue} to decide whether to neutralize a cell.
+ *
+ * @type {RegExp}
+ */
+const FORMULA_LEADING_RE = /^\s*[=+\-@]/;
+
+/**
+ * The character prefixed to a formula-leading value to neutralize it. A leading
+ * apostrophe is the widely recognized spreadsheet convention that forces a cell to be
+ * treated as literal text, so `=1+1` stored as `'=1+1` is displayed verbatim and never
+ * evaluated. It is applied before RFC 4180 quoting so the guard lives inside any
+ * surrounding quotes.
+ *
+ * @type {string}
+ */
+const FORMULA_GUARD_PREFIX = "'";
+
+/**
  * The RFC 4180 record (row) separator. Both the header row and every data row are
  * joined with this sequence by {@link toCsv}. A bare `\n` is a widely tolerated
  * fallback, but `\r\n` is the spec-mandated separator and what this module emits.
@@ -65,7 +97,8 @@ const RECORD_SEPARATOR = '\r\n';
 const FIELD_SEPARATOR = ',';
 
 /**
- * Escape a single field value into its RFC 4180 CSV representation.
+ * Escape a single field value into its RFC 4180 CSV representation, with spreadsheet
+ * formula-injection neutralization for untrusted data.
  *
  * Steps:
  *   1. `null` / `undefined` collapse to the empty string `''` (an absent value is
@@ -75,10 +108,15 @@ const FIELD_SEPARATOR = ',';
  *      Report rows are expected to hold flat primitives; non-primitive values are
  *      still handled safely via `String()` (e.g. an object becomes
  *      `'[object Object]'`) and never cause a throw.
- *   3. If the resulting string contains a comma, a double-quote, a carriage
+ *   3. CSV / formula injection guard (CWE-1236): if the value's first non-whitespace
+ *      character is a spreadsheet formula trigger (`=`, `+`, `-`, `@`), an apostrophe
+ *      is prefixed so spreadsheet software treats the cell as literal text instead of
+ *      evaluating it (e.g. `=2+2` -> `'=2+2`). This runs BEFORE the RFC 4180 step so
+ *      the guard apostrophe ends up inside any surrounding quotes.
+ *   4. If the (possibly guarded) string contains a comma, a double-quote, a carriage
  *      return, or a line feed, the field is wrapped in double-quotes and every
  *      embedded double-quote is doubled (`"` -> `""`).
- *   4. Otherwise the string is returned verbatim, with no surrounding quotes.
+ *   5. Otherwise the string is returned verbatim, with no surrounding quotes.
  *
  * The function is pure and total: it has no side effects and returns a string for
  * every possible input.
@@ -92,6 +130,9 @@ const FIELD_SEPARATOR = ',';
  * escapeCsvValue('he said "hi"'); // -> '"he said ""hi"""'  (quote doubled + wrapped)
  * escapeCsvValue(null);           // -> ''                  (absent value)
  * escapeCsvValue(42);             // -> '42'                (number coerced)
+ * escapeCsvValue('=2+2');         // -> "'=2+2"             (formula neutralized to text)
+ * escapeCsvValue('-10');          // -> "'-10"              (leading '-' neutralized)
+ * escapeCsvValue('=A1,B1');       // -> "\"'=A1,B1\""       (neutralized, then quoted for the comma)
  */
 function escapeCsvValue(value) {
   // Treat both `null` and `undefined` as an empty field.
@@ -99,7 +140,17 @@ function escapeCsvValue(value) {
     return '';
   }
 
-  const str = String(value);
+  let str = String(value);
+
+  // CSV / formula injection neutralization (CWE-1236), applied BEFORE RFC 4180
+  // quoting. When the first non-whitespace character is a spreadsheet formula trigger
+  // (`=`, `+`, `-`, `@`), prefix the value with an apostrophe so spreadsheet software
+  // treats the cell as literal text rather than evaluating it as a formula. The guard
+  // is added to the raw string first so that, if the value also requires RFC quoting
+  // (e.g. it contains a comma), the apostrophe ends up inside the surrounding quotes.
+  if (FORMULA_LEADING_RE.test(str)) {
+    str = FORMULA_GUARD_PREFIX + str;
+  }
 
   // Quote only when one of the RFC 4180 special characters is present, doubling
   // any interior double-quote as we wrap the value.

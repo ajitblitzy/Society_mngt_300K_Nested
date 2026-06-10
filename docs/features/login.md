@@ -77,7 +77,7 @@ Illustrative request body:
 ```json
 {
   "email": "resident@example.com",
-  "password": "a-strong-password",
+  "password": "StrongPass1",
   "name": "Resident One"
 }
 ```
@@ -107,7 +107,7 @@ Illustrative request body:
 ```json
 {
   "email": "resident@example.com",
-  "password": "a-strong-password"
+  "password": "StrongPass1"
 }
 ```
 

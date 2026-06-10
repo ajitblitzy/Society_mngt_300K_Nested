@@ -80,8 +80,9 @@ Each report can be returned in one of two formats, selected with the optional
   downloading into a spreadsheet.
 
 CSV output is produced by a small **built-in, hand-written serializer** — the feature
-intentionally adds **no third-party CSV dependency**. Any value other than `json` or
-`csv` for `?format=` is not a recognized format.
+intentionally adds **no third-party CSV dependency**. Only `?format=csv` selects CSV;
+an absent `?format=` or any other value returns the default JSON response (see
+[`../api/endpoints.md`](../api/endpoints.md)).
 
 ## Endpoints
 
