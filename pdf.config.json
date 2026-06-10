@@ -39,7 +39,7 @@
     "docs/guides/jsdoc-conventions.md",
     "docs/guides/pdf-export.md"
   ],
-  "output": "docs/Society-Management-Documentation.pdf",
+  "dest": "docs/Society-Management-Documentation.pdf",
   "document_title": "Society Management Documentation",
   "pdf_options": {
     "format": "A4",

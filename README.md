@@ -55,7 +55,7 @@ npm install
 npm run docs:build
 ```
 
-`npm run docs:build` produces the consolidated deliverable at `docs/Society-Management-Documentation.pdf`. The build relies on a small set of dev-only tools: `jsdoc` and `jsdoc-to-markdown` generate the per-identity API tables, `@mermaid-js/mermaid-cli` renders diagrams to SVG, and `md-to-pdf` concatenates the ordered Markdown into the PDF. For the full step-by-step setup and the individual build steps, see [Building the documentation](docs/getting-started/building-docs.md).
+`npm run docs:build` produces the consolidated deliverable at `docs/Society-Management-Documentation.pdf`. The build runs three committed, cross-platform Node helper scripts in order, each backed by a dev-only tool: `scripts/docs-api.js` uses `jsdoc-to-markdown` to generate the per-identity API tables under `docs/api-reference/<layer>/mod_N.md`, `scripts/docs-diagrams.js` uses `@mermaid-js/mermaid-cli` to render any Mermaid sources to SVG, and `scripts/docs-pdf.js` reads the ordered `documents` list from `pdf.config.json`, concatenates those Markdown files in order, and renders the assembled document into the single PDF with `md-to-pdf` (writing to the configured `dest`). For the full step-by-step setup and the individual build steps, see [Building the documentation](docs/getting-started/building-docs.md).
 
 ## License
 
