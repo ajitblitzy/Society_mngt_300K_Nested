@@ -18,6 +18,13 @@
  *     only fails if no documents are present at all.
  *   - Concatenates the existing documents, in order, separated by an explicit
  *     page break so each top-level document starts on a fresh PDF page.
+ *   - Strips fenced ```mermaid blocks from each page before rendering. `md-to-pdf`
+ *     has no Mermaid support, so a fence would otherwise print as raw source text
+ *     alongside the pre-rendered SVG that each diagram page embeds; the PDF must
+ *     present the rendered diagram only (AAP §0.4.3 — diagrams are "pre-rendered
+ *     to SVG ... for reliable PDF embedding"). The authored Markdown keeps its
+ *     Mermaid source (the diagram source-of-truth for `docs:diagrams` and for
+ *     native Markdown viewers); only the Markdown handed to `md-to-pdf` is stripped.
  *   - Renders the combined Markdown to a single PDF with `md-to-pdf`, passing the
  *     supported configuration keys (`pdf_options`, `css`, `document_title`,
  *     `highlight_style`) and writing to the configured `dest`.
@@ -81,6 +88,42 @@ function rewriteImagePaths(markdown, docDir) {
 }
 
 /**
+ * Strip fenced ```mermaid code blocks from a Markdown document.
+ *
+ * `md-to-pdf` renders Markdown with `marked`, which has no Mermaid support: a
+ * ```mermaid fence is emitted as a literal `<pre><code>` block, so its raw source
+ * (e.g. `graph TD ... --> ...` / `flowchart LR ...`) would appear in the rendered
+ * PDF *in addition to* the pre-rendered SVG that each diagram page embeds on the
+ * line immediately after the fence. The consolidated PDF is required to present
+ * each diagram as the rendered image only (AAP §0.4.3 — diagrams are "pre-rendered
+ * to SVG ... for reliable PDF embedding"), so the fenced Mermaid source is removed
+ * from the Markdown before it is handed to `md-to-pdf`.
+ *
+ * This transformation is applied ONLY to the Markdown fed into the PDF. The
+ * authored pages on disk are left unchanged and keep their ```mermaid source,
+ * which remains the single source-of-truth that `docs:diagrams` extracts to render
+ * each SVG and that native Markdown viewers (e.g. GitHub) render inline.
+ *
+ * Matching is intentionally narrow and robust:
+ *   - Only fences whose info string is exactly `mermaid` are removed; other fenced
+ *     code blocks (e.g. the ```javascript usage examples) are left untouched.
+ *   - The closing fence must repeat the opening fence's backtick run (the `\1`
+ *     backreference), so a shorter run elsewhere cannot prematurely close a block.
+ *   - Both LF and CRLF (`\r?\n`) line endings are handled.
+ *   - The trailing newline after the closing fence is consumed so no orphaned blank
+ *     line is left behind.
+ *   - The `![alt](diagram.svg)` image embed that follows each fence sits OUTSIDE the
+ *     fence and is therefore preserved, so the rendered diagram still embeds.
+ *
+ * @param {string} markdown - The source document's Markdown content.
+ * @returns {string} The Markdown with every fenced ```mermaid block removed.
+ */
+function stripMermaidBlocks(markdown) {
+	const MERMAID_FENCE_RE = /^[ \t]*(`{3,})mermaid\b[^\r\n]*\r?\n[\s\S]*?\r?\n[ \t]*\1[ \t]*\r?\n?/gm;
+	return markdown.replace(MERMAID_FENCE_RE, '');
+}
+
+/**
  * Load and validate the PDF assembly configuration.
  *
  * @returns {{documents: string[], dest: string, mdOptions: object}} Parsed config.
@@ -126,10 +169,20 @@ function assembleMarkdown(documents) {
 		const absolutePath = path.join(ROOT, relativePath);
 		if (fs.existsSync(absolutePath)) {
 			const raw = fs.readFileSync(absolutePath, 'utf8').trimEnd();
-			// Rewrite each page's relative image paths to be repository-root
-			// relative so they still resolve against the md-to-pdf file server
-			// (rooted at `basedir`/ROOT) once all pages are concatenated.
-			sections.push(rewriteImagePaths(raw, path.dirname(absolutePath)));
+			// Two source-preserving transforms are applied before concatenation:
+			//   1. Strip ```mermaid fenced blocks. `md-to-pdf` does not render
+			//      Mermaid, so a fence would print as raw source text next to the
+			//      pre-rendered SVG that each diagram page embeds — the PDF must show
+			//      the rendered diagram only (AAP §0.4.3). The authored pages keep
+			//      their Mermaid source on disk; only this PDF input is stripped.
+			//   2. Rewrite each page's relative image paths to be repository-root
+			//      relative so they still resolve against the md-to-pdf file server
+			//      (rooted at `basedir`/ROOT) once all pages are concatenated.
+			const prepared = rewriteImagePaths(
+				stripMermaidBlocks(raw),
+				path.dirname(absolutePath)
+			);
+			sections.push(prepared);
 			included.push(relativePath);
 		} else {
 			missing.push(relativePath);
