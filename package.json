@@ -1,0 +1,17 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Society management test project (backprop integration). Synthetic JavaScript codebase of standalone functions organized across src/ and tests/.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "scripts": {
+    "compile": "node -e \"const fs=require('fs'),path=require('path'),vm=require('vm');const roots=['src','tests'].filter(d=>fs.existsSync(d));function walk(d){let o=[];for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name);if(e.isDirectory())o=o.concat(walk(p));else if(e.name.endsWith('.js'))o.push(p);}return o;}let files=[];for(const r of roots)files=files.concat(walk(r));let errors=0;for(const f of files){try{new vm.Script(fs.readFileSync(f,'utf8'),{filename:f});}catch(e){errors++;console.error('SYNTAX ERROR: '+f+' -> '+e.message);}}console.log('Syntax-checked '+files.length+' file(s); errors: '+errors);process.exit(errors?1:0);\"",
+    "build": "npm run compile",
+    "test": "node --test tests",
+    "test:unit": "node --test tests/unit",
+    "test:integration": "node --test tests/integration"
+  }
+}
