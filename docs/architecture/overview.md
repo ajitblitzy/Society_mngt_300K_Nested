@@ -39,11 +39,11 @@ As a result, each module identity is a self-contained set of independent `mod_N_
 
 ## Repository & Layer Structure
 
-The diagram below shows the repository layout and the placement of module identities within each layer: the repository root holds the placeholder `README.md` and the `society_mgmt_300k.zip` archive, which extracts to the `src/` and `tests/` trees and the MIT `LICENSE`; `src/` contains the nine application layers and `tests/` contains the two test layers.
+The diagram below shows the repository layout and the placement of module identities within each layer: the repository root holds the root documentation hub `README.md` and the `society_mgmt_300k.zip` archive, which extracts to the `src/` and `tests/` trees and the MIT `LICENSE`; `src/` contains the nine application layers and `tests/` contains the two test layers.
 
 ```mermaid
 graph TD
-    ROOT["Repository root"] --> RM["README.md (placeholder)"]
+    ROOT["Repository root"] --> RM["README.md (documentation hub)"]
     ROOT --> ZIP["society_mgmt_300k.zip"]
     ZIP --> SRC["src/"]
     ZIP --> TST["tests/"]
@@ -63,9 +63,9 @@ graph TD
 
 The documentation build renders this diagram to SVG via `npm run docs:diagrams` (the `mmdc` CLI from `@mermaid-js/mermaid-cli`), and the assembled PDF embeds the rendered image:
 
-![Repository / layer structure](docs/assets/diagrams/repo-structure.svg)
+![Repository / layer structure](../assets/diagrams/structure.svg)
 
-*Diagram source: `docs/assets/diagrams-src/repo-structure.mmd` (rendered to SVG by `npm run docs:diagrams`).* The rendered `docs/assets/diagrams/repo-structure.svg` is a **generated, git-ignored** build output — it is produced by the build rather than committed, so an empty or missing `docs/assets/diagrams/` directory is expected until the build runs; see [Documentation Assets](../assets/README.md) for the diagram source → SVG mapping.
+*Diagram source: the Mermaid fenced block on this page (`docs/architecture/overview.md`), rendered to `../assets/diagrams/structure.svg` by `npm run docs:diagrams`.* That rendered SVG is a **generated, git-ignored** build output — it is produced by the build rather than committed, so until the build runs `docs/assets/diagrams/` holds only its tracked `.gitkeep` placeholder; see [Documentation Assets](../assets/README.md) for the diagram source → SVG mapping.
 
 ## See Also
 

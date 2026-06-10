@@ -59,4 +59,4 @@ npm run docs:build
 
 ## License
 
-Licensed under the MIT License — see [`LICENSE/LICENSE.txt`](LICENSE/LICENSE.txt).
+Licensed under the MIT License (Copyright (c) 2026). The full license text ships inside the source archive `society_mgmt_300k.zip` at `LICENSE/LICENSE.txt`; per the documentation scope the archive is not repackaged, so the license is not extracted into the repository working tree.

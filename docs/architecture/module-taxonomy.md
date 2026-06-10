@@ -27,7 +27,7 @@ Within identity `mod_N`, every function is named `mod_N_M`, where:
 
 So identity `mod_0` declares `mod_0_0`, `mod_0_1`, …; identity `mod_12` declares `mod_12_0`, `mod_12_1`, …; and so on. Every function shares the same signature:
 
-```
+```text
 mod_N_M(x) → number
 ```
 

@@ -22,7 +22,7 @@ Every function shares one **uniform contract**: `mod_N_M(x) → number`, which c
 
 ## License
 
-Licensed under the MIT License (Copyright (c) 2026) — see [`../../LICENSE/LICENSE.txt`](../../LICENSE/LICENSE.txt).
+Licensed under the MIT License (Copyright (c) 2026). The full license text ships inside the source archive `society_mgmt_300k.zip` at `LICENSE/LICENSE.txt`; per the documentation scope the archive is not repackaged, so the license is not extracted into the repository working tree.
 
 ## Next steps
 

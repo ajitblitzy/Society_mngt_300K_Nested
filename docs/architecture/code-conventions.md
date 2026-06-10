@@ -8,7 +8,7 @@ This page is the **canonical** definition of the two things the rest of the docu
 
 Every function in the codebase shares one signature and one body. The signature is:
 
-```
+```text
 mod_N_M(x) → number
 ```
 

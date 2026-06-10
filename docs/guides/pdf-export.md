@@ -7,7 +7,7 @@ This guide documents how the authored Markdown corpus under `docs/` is assembled
 The documentation build is a **three-stage pipeline**. Each stage is exposed as an npm script in the root `package.json`; the three run in a strict, fixed order, and `docs:build` chains them together. The PDF is the final output of the last stage.
 
 1. **`docs:api`** — runs `scripts/docs-api.js`, which drives `jsdoc-to-markdown` (the `jsdoc2md` CLI) over the source globs `src/**/*.js` and `tests/**/*.js` (configured by `jsdoc.json`, with `sourceType: "script"`), writing a per-identity API reference table into each `docs/api-reference/<layer>/mod_N.md` page.
-2. **`docs:diagrams`** — runs `scripts/docs-diagrams.js`, which drives `mmdc` (the CLI from `@mermaid-js/mermaid-cli`) to render the authored Mermaid sources to SVG under `../assets/diagrams/` (that is, `docs/assets/diagrams/`), so each diagram is available as an image for reliable embedding.
+2. **`docs:diagrams`** — runs `scripts/docs-diagrams.js`, which drives `mmdc` (the CLI from `@mermaid-js/mermaid-cli`) to render the Mermaid diagrams authored in the documentation pages to SVG under `../assets/diagrams/` (that is, `docs/assets/diagrams/`), so each diagram is available as an image for reliable embedding.
 3. **`docs:pdf`** — runs `scripts/docs-pdf.js`, which reads the ordered `documents` list from `pdf.config.json`, concatenates those Markdown files in order (inserting a page break between top-level sections), and renders the assembled document into the single PDF with `md-to-pdf`, writing to the configured `dest`, `../Society-Management-Documentation.pdf`.
 
 The three stages must run in the order `docs:api` → `docs:diagrams` → `docs:pdf`: the per-identity API tables must exist before the corpus is assembled, and the SVG diagrams must be on disk before the PDF renderer embeds them. `docs:build` enforces exactly this order:
@@ -38,9 +38,9 @@ flowchart LR
 
 This diagram is pre-rendered by `npm run docs:diagrams` to `../assets/diagrams/build-pipeline.svg` for embedding in the PDF. The assembled PDF embeds the rendered image rather than the raw Mermaid source, so the diagram displays reliably:
 
-![Documentation build to PDF pipeline](docs/assets/diagrams/build-pipeline.svg)
+![Documentation build to PDF pipeline](../assets/diagrams/build-pipeline.svg)
 
-*Diagram source: `docs/assets/diagrams-src/build-pipeline.mmd` (rendered to SVG by `npm run docs:diagrams`).* The rendered `docs/assets/diagrams/build-pipeline.svg` is a **generated, git-ignored** build output — it is produced by the build rather than committed, so an empty or missing `docs/assets/diagrams/` directory is expected until the build runs; see [Documentation Assets](../assets/README.md) for the diagram source → SVG mapping.
+*Diagram source: the Mermaid fenced block on this page (`docs/guides/pdf-export.md`), rendered to `../assets/diagrams/build-pipeline.svg` by `npm run docs:diagrams`.* That rendered SVG is a **generated, git-ignored** build output — it is produced by the build rather than committed, so until the build runs `docs/assets/diagrams/` holds only its tracked `.gitkeep` placeholder; see [Documentation Assets](../assets/README.md) for the diagram source → SVG mapping.
 
 ## Page layout & output
 
