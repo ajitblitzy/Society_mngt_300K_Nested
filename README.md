@@ -1,9 +1,32 @@
 # Ajit-backprop-test
 
 **Society Management** — a Python re-implementation of the original JavaScript
-modules. The codebase was refactored from JavaScript to Python to improve code
-quality and structural performance while **preserving the existing public API
-and behavior** (no functional regressions).
+modules. The codebase is being migrated from JavaScript to Python to improve
+code quality and structural performance while **preserving the existing public
+API and behavior** (no functional regressions). See
+[**Project status**](#project-status) for what exists today versus what is
+planned.
+
+---
+
+## Project status
+
+This repository is being migrated from JavaScript to Python in stages. **The
+current foundation is in place:**
+
+- the single canonical implementation, `society_compute(x)`, in
+  `src/society_mgmt/core.py`;
+- the `src`-layout package skeleton — the `society_mgmt` package, its nine layer
+  sub-packages, and the `tests` package tree (each currently containing only its
+  `__init__.py` marker); and
+- project packaging and tooling configuration: `pyproject.toml`,
+  `requirements.txt`, `.gitignore`, and `LICENSE`.
+
+**Planned for subsequent checkpoints:** the name-preserving `mod_N_K` binding
+modules (`src/society_mgmt/<layer>/file_*.py`) and the genuine `pytest`
+equivalence test suite (`tests/unit/test_file_*.py`,
+`tests/integration/test_file_*.py`). Sections below mark anything that depends
+on those not-yet-created files as **(planned)**.
 
 ---
 
@@ -24,13 +47,17 @@ in the **same repository**, applying the following changes:
   single canonical function, `society_compute(x)`, in
   `src/society_mgmt/core.py`. This removes roughly **300,000 lines** of
   duplicated and dead code.
-- **API preservation.** Every original `mod_N_K` name is retained as a thin,
-  name-preserving binding that delegates to `society_compute`, so every public
-  function remains importable and returns identical values.
+- **API preservation _(planned)_.** Every original `mod_N_K` name will be
+  retained as a thin, name-preserving binding that delegates to
+  `society_compute`, so every public function remains importable and returns
+  identical values. These binding modules are added in a subsequent checkpoint
+  (see [Project status](#project-status)).
 - **Dead-code elimination.** The comment-only padding file (`filler.js`) and the
-  unused `const store = []` declaration in every module are dropped.
-- **Real tests.** The source "test" files contained no assertions; they are
-  replaced with genuine `pytest` equivalence tests that prove behavioral parity.
+  unused `const store = []` declaration in every module are dropped — they are
+  not carried into the Python package.
+- **Real tests _(planned)_.** The source "test" files contained no assertions;
+  they are replaced with genuine `pytest` equivalence tests that prove
+  behavioral parity. The test suite is added in a subsequent checkpoint.
 
 > **A note on "performance."** The functions are pure, constant-time (`O(1)`)
 > arithmetic — there are no loops, I/O, database, or network operations to
@@ -65,6 +92,9 @@ structural fidelity with the original source — they carry **no** MVC,
 data-access, routing, or configuration behavior, because none existed in the
 source to preserve.
 
+**Current layout (this checkpoint).** Each layer sub-package currently contains
+only its `__init__.py` marker; the canonical implementation lives in `core.py`:
+
 ```
 .
 ├── pyproject.toml              # build system, metadata, ruff & pytest config
@@ -74,28 +104,51 @@ source to preserve.
 ├── .gitignore
 ├── src/
 │   └── society_mgmt/
-│       ├── __init__.py
+│       ├── __init__.py         # re-exports society_compute
 │       ├── core.py             # society_compute(x) — the single canonical implementation
-│       ├── controllers/        # __init__.py + file_0.py, file_11.py, file_22.py
-│       ├── services/           # __init__.py + file_1.py, file_12.py, file_23.py
-│       ├── models/             # __init__.py + file_2.py, file_13.py, file_24.py
-│       ├── routes/             # __init__.py + file_3.py, file_14.py, file_25.py
-│       ├── utils/              # __init__.py + file_4.py, file_15.py, file_26.py
-│       ├── middleware/         # __init__.py + file_5.py, file_16.py, file_27.py
-│       ├── config/             # __init__.py + file_6.py, file_17.py
-│       ├── repositories/       # __init__.py + file_7.py, file_18.py
-│       └── domain/             # __init__.py + file_8.py, file_19.py
+│       ├── controllers/        # __init__.py
+│       ├── services/           # __init__.py
+│       ├── models/             # __init__.py
+│       ├── routes/             # __init__.py
+│       ├── utils/              # __init__.py
+│       ├── middleware/         # __init__.py
+│       ├── config/             # __init__.py
+│       ├── repositories/       # __init__.py
+│       └── domain/             # __init__.py
 └── tests/
     ├── __init__.py
-    ├── unit/                   # __init__.py + test_file_9.py, test_file_20.py
-    └── integration/            # __init__.py + test_file_10.py, test_file_21.py
+    ├── unit/                   # __init__.py
+    └── integration/            # __init__.py
 ```
 
-Each per-layer module imports the canonical implementation and re-exposes its
-original function names as thin bindings, for example:
+**Planned final layout _(subsequent checkpoints)_.** The name-preserving
+`mod_N_K` binding modules and the genuine `pytest` equivalence tests are added
+to the same skeleton later. When complete, the per-layer binding modules and
+test files appear as:
+
+```
+src/
+└── society_mgmt/
+    ├── controllers/        # + file_0.py, file_11.py, file_22.py
+    ├── services/           # + file_1.py, file_12.py, file_23.py
+    ├── models/             # + file_2.py, file_13.py, file_24.py
+    ├── routes/             # + file_3.py, file_14.py, file_25.py
+    ├── utils/              # + file_4.py, file_15.py, file_26.py
+    ├── middleware/         # + file_5.py, file_16.py, file_27.py
+    ├── config/             # + file_6.py, file_17.py
+    ├── repositories/       # + file_7.py, file_18.py
+    └── domain/             # + file_8.py, file_19.py
+tests/
+├── unit/                   # + test_file_9.py, test_file_20.py
+└── integration/            # + test_file_10.py, test_file_21.py
+```
+
+Once added, each per-layer module will import the canonical implementation and
+re-expose its original function names as thin bindings — for example:
 
 ```python
 from society_mgmt.core import society_compute
+
 
 def mod_0_0(x):
     return society_compute(x)
@@ -161,8 +214,9 @@ pip install -e ".[dev]"
 
 ## Usage
 
-Call the canonical implementation directly, or use any of the original
-name-preserving bindings — both return identical values.
+Call the canonical implementation directly. It is available both from
+`society_mgmt.core` and as a top-level re-export of the `society_mgmt`
+package — both return identical values:
 
 ```python
 from society_mgmt.core import society_compute
@@ -171,7 +225,18 @@ society_compute(0)   # -> 10
 society_compute(1)   # -> 16
 society_compute(2)   # -> 22
 
-# Every original mod_N_K name is still importable and returns the same value:
+# society_compute is also re-exported at the top level of the package:
+from society_mgmt import society_compute
+
+society_compute(2)   # -> 22
+```
+
+**(Planned)** Once the binding modules are added (see
+[Project status](#project-status)), every original `mod_N_K` name will be
+importable and will return the same value — for example:
+
+```python
+# Available after the binding modules are added in a subsequent checkpoint:
 from society_mgmt.controllers import file_0
 
 file_0.mod_0_0(2)    # -> 22  (name-preserving binding delegates to society_compute)
@@ -181,15 +246,21 @@ file_0.mod_0_0(2)    # -> 22  (name-preserving binding delegates to society_comp
 
 ## Running tests
 
-The test suite is configured via `pyproject.toml` (`testpaths = ["tests"]`,
-`pythonpath = ["src"]`). Unit tests live in `tests/unit/` and cross-module
-parity tests in `tests/integration/`. From the repository root, run:
+The test harness is already configured via `pyproject.toml`
+(`testpaths = ["tests"]`, `pythonpath = ["src"]`), so no per-run setup is
+required.
+
+**(Planned)** The genuine `pytest` equivalence suite — unit tests in
+`tests/unit/` and cross-module parity tests in `tests/integration/` — is added
+in a subsequent checkpoint (see [Project status](#project-status)). Once those
+test files exist, run the full suite from the repository root with:
 
 ```bash
 pytest
 ```
 
-To lint and format the codebase with `ruff`:
+Linting and formatting with `ruff` work today and can be run from the
+repository root:
 
 ```bash
 ruff check .
