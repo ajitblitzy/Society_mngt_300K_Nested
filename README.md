@@ -19,18 +19,23 @@ delivers:
 - the `src`-layout package — the `society_mgmt` package, its nine layer
   sub-packages, and the `tests` package tree;
 - the **name-preserving `mod_N_K` binding modules**
-  (`src/society_mgmt/<layer>/file_*.py`) — **28,305** bindings across the 24
-  production modules in the nine layers, each delegating to `society_compute`
-  (see **Overview — what changed** for how this number is derived);
+  (`src/society_mgmt/<layer>/file_*.py`) — all **33,105** bindings, each
+  delegating to `society_compute`: **28,305** across the 24 production modules
+  in the nine layers, plus **4,800** in the `tests_unit` / `tests_integration`
+  packages that preserve the names from the four test-source modules (see
+  **Overview — what changed** for how these numbers are derived);
 - project packaging and tooling configuration: `pyproject.toml`,
   `requirements.txt`, `.gitignore`, and `LICENSE`; and
 - the genuine `pytest` equivalence test suite. The four JavaScript
-  *test-source* modules are implemented as real pytest tests rather than binding
-  modules — `tests/unit/file_9.js` → `tests/unit/test_file_9.py`,
+  *test-source* modules are implemented as real pytest tests —
+  `tests/unit/file_9.js` → `tests/unit/test_file_9.py`,
   `tests/unit/file_20.js` → `tests/unit/test_file_20.py`,
   `tests/integration/file_10.js` → `tests/integration/test_file_10.py`, and
   `tests/integration/file_21.js` → `tests/integration/test_file_21.py`. The
-  suite contains **276 tests, all passing**.
+  suite contains **276 tests, all passing**. Their original `mod_N_K` names are
+  *also* preserved as bindings under `src/society_mgmt/tests_unit/` and
+  `src/society_mgmt/tests_integration/`, so the full public surface stays
+  importable (see **Overview — what changed**).
 
 ---
 
@@ -51,20 +56,25 @@ in the **same repository**, applying the following changes:
   single canonical function, `society_compute(x)`, in
   `src/society_mgmt/core.py`. This removes roughly **300,000 lines** of
   duplicated and dead code.
-- **API preservation.** Every original `mod_N_K` name from the **24 production
+- **API preservation.** Every original `mod_N_K` name from **all 28 source
   modules** is retained as a thin, name-preserving binding that delegates to
   `society_compute`, so every public function remains importable and returns
-  identical values. This is **28,305** bindings across the nine layers — see
-  **How the counts break down** below.
+  identical values. This is **33,105** bindings in total — **28,305** across the
+  nine production layers and **4,800** in the `tests_unit` / `tests_integration`
+  packages — see **How the counts break down** below.
 - **Dead-code elimination.** The comment-only padding file (`filler.js`) and the
   unused `const store = []` declaration in every module are dropped — they are
   not carried into the Python package.
-- **Real tests.** The four JavaScript *test-source* modules
-  (`file_9`, `file_20` in `tests/unit/`; `file_10`, `file_21` in
+- **Real tests (plus preserved names).** The four JavaScript *test-source*
+  modules (`file_9`, `file_20` in `tests/unit/`; `file_10`, `file_21` in
   `tests/integration/`) contained no assertions; they are replaced with genuine
   `pytest` equivalence tests that prove behavioral parity. That suite now exists
-  and its **276 tests all pass** — these four modules are **not** turned into
-  `mod_N_K` binding modules.
+  and its **276 tests all pass**. Because the public surface must remain
+  complete, the original `mod_N_K` names from those four modules are *also*
+  preserved as bindings under `src/society_mgmt/tests_unit/` and
+  `src/society_mgmt/tests_integration/` (delegating to `society_compute`, like
+  every other binding). The genuine pytest files under `tests/` are not
+  themselves `mod_N_K` binding modules.
 
 > **A note on "performance."** The functions are pure, constant-time (`O(1)`)
 > arithmetic — there are no loops, I/O, database, or network operations to
@@ -77,20 +87,23 @@ in the **same repository**, applying the following changes:
 
 The **33,105** figure is the total number of `mod_N_K` functions across **all
 28** JavaScript module files in the original archive. Those 28 files split into
-two groups:
+two groups, and **every** one of the 33,105 names is preserved as an importable
+binding that delegates to `society_compute`:
 
 | Group | Source files | Functions | Becomes |
 |-------|--------------|-----------|---------|
 | Production modules (nine layers) | 24 files | **28,305** | Name-preserving binding modules under `src/society_mgmt/<layer>/` |
-| Test-source modules | 4 files — `file_9`, `file_20` (unit); `file_10`, `file_21` (integration) | **4,800** | Genuine `pytest` equivalence tests |
+| Test-source modules | 4 files — `file_9`, `file_20` (unit); `file_10`, `file_21` (integration) | **4,800** | Name-preserving binding modules under `src/society_mgmt/tests_unit/` and `src/society_mgmt/tests_integration/` **and** genuine `pytest` equivalence tests |
 
-So the in-scope, name-preserving public surface implemented as importable
-bindings is **28,305** (= 33,105 − 4,800), **not** 33,105: the 4,800 functions
-in the four test-source modules are reproduced as real test assertions rather
-than as callable bindings. (`filler.js` contributes no functions and is
-dropped.) The per-layer counts are: `controllers`, `services`, `models`,
-`routes`, and `utils` = 3,600 each; `middleware` = 3,105 (`file_27` has 705);
-`config`, `repositories`, and `domain` = 2,400 each.
+So the complete, name-preserving public surface implemented as importable
+bindings is **33,105** (= 28,305 + 4,800). The 4,800 functions from the four
+test-source modules are preserved twice over: once as callable bindings (so the
+public surface stays complete) and once as real `pytest` assertions (so behavior
+is proven). (`filler.js` contributes no functions and is dropped.) The per-layer
+binding counts are: `controllers`, `services`, `models`, `routes`, and `utils`
+= 3,600 each; `middleware` = 3,105 (`file_27` has 705); `config`,
+`repositories`, and `domain` = 2,400 each; and `tests_unit` and
+`tests_integration` = 2,400 each.
 
 ### The function contract
 
@@ -111,17 +124,18 @@ contract is preserved across the full numeric domain.
 
 ## Project structure
 
-This is a `src`-layout package. The nine layer directory names
+This is a `src`-layout package. The nine production layer directory names
 (`controllers`, `services`, `models`, `routes`, `utils`, `middleware`,
-`config`, `repositories`, `domain`) are retained **only as package labels** for
-structural fidelity with the original source — they carry **no** MVC,
-data-access, routing, or configuration behavior, because none existed in the
-source to preserve.
+`config`, `repositories`, `domain`) — together with the `tests_unit` and
+`tests_integration` packages that hold the bindings for the four test-source
+modules — are retained **only as package labels** for structural fidelity with
+the original source. They carry **no** MVC, data-access, routing, or
+configuration behavior, because none existed in the source to preserve.
 
 **Layout.** The canonical implementation lives in `core.py`, every layer
-sub-package contains its name-preserving `mod_N_K` binding modules, and the
-`tests/` tree holds the genuine `pytest` equivalence suite alongside its package
-markers:
+sub-package (including `tests_unit` / `tests_integration`) contains its
+name-preserving `mod_N_K` binding modules, and the top-level `tests/` tree holds
+the genuine `pytest` equivalence suite alongside its package markers:
 
 ```
 .
@@ -142,7 +156,9 @@ markers:
 │       ├── middleware/         # __init__.py + file_5.py, file_16.py, file_27.py
 │       ├── config/             # __init__.py + file_6.py, file_17.py
 │       ├── repositories/       # __init__.py + file_7.py, file_18.py
-│       └── domain/             # __init__.py + file_8.py, file_19.py
+│       ├── domain/             # __init__.py + file_8.py, file_19.py
+│       ├── tests_unit/         # __init__.py + file_9.py, file_20.py   (name bindings)
+│       └── tests_integration/  # __init__.py + file_10.py, file_21.py  (name bindings)
 └── tests/
     ├── __init__.py
     ├── unit/                   # __init__.py + test_file_9.py, test_file_20.py
