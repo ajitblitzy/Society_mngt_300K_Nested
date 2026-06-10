@@ -1,39 +1,40 @@
 # mod_7
 
-Per-identity API reference for module identity `mod_7`, filed under the **repositories** layer of the Society Management codebase.
+[← Back to API Reference catalog](../index.md)
+
+## Overview
 
 - **Module identity:** `mod_7`
 - **Layer:** `repositories`
 - **Source file:** `src/repositories/file_7.js`
-- **Function count:** **1,200** functions (`mod_7_0` … `mod_7_1199`)
+- **Functions:** 1,200 (`mod_7_0` … `mod_7_1199`)
 
-The codebase is synthetic, so the `repositories` layer is an organizational grouping only: `mod_7` defines no persistence, CRUD, query, or other data-access behavior, and every function is the same arithmetic routine. A file-scoped `const store = [];` is declared in the source but is unused.
+`mod_7` is one of two module identities in the `repositories` layer — alongside `mod_18` — and, like every identity in the codebase, it contains only the uniform arithmetic functions, with no business logic. It belongs to the `repositories` layer by directory taxonomy only; it implements **no data access, persistence, CRUD, or query behavior**.
+
+> **Synthetic code.** Despite the `repositories` layer name, `mod_7` performs no persistence or data access; every one of its functions is the same synthetic arithmetic routine. A file-scoped `const store = [];` is declared in the source but is unused (never read or written).
 
 ## Uniform Contract
 
-- **Signature:** `mod_7_M(x) → number` — one numeric input `x` and one numeric return value, for each ordinal `M` from `0` through `1199`.
-- **Behavior:** computes `x*1 + x*2 + x*3` (that is, `6*x`), then adds `10` when the result is even — so for integer `x` the function returns `6*x + 10`.
+Every function in `mod_7` shares the signature `mod_7_M(x) → number` — one numeric input `x` and one numeric return value. It accumulates `x*1 + x*2 + x*3` (= `6*x`) and adds `10` when the total is even, so for integer `x` the result is `6*x + 10`.
 
-See [Code Conventions & Uniform Contract](../../architecture/code-conventions.md) for the full contract and the adopted JSDoc standard. See also the [JSDoc conventions](../../guides/jsdoc-conventions.md) guide for how the doc-comments are applied.
+The full body, worked values, and file-level shape are defined once in [Code Conventions & Uniform Contract](../../architecture/code-conventions.md) and are not repeated here; the JSDoc applied uniformly to every function is described in [JSDoc conventions](../../guides/jsdoc-conventions.md).
 
 ## API Reference
 
-The table below is generated from the JSDoc in `src/repositories/file_7.js` by `jsdoc-to-markdown` during `npm run docs:api`.
+The table below is generated from the JSDoc comments in `src/repositories/file_7.js` by `npm run docs:api` (`jsdoc2md`); its columns are the function, its parameter, and its return value.
 
-| Function | Parameter | Returns |
-| --- | --- | --- |
 <!-- docs:api -->
 
 ## Example
 
 ```javascript
-// mod_7_0 computes 6*x, then +10 when the result is even.
+// mod_7_0 applies the uniform contract: r = x*1 + x*2 + x*3 (= 6*x), then +10 if r is even.
 // For integer x the result is 6*x + 10.
-mod_7_0(5); // => 40
-mod_7_0(1); // => 16
+mod_7_0(5); // => 40   (6*5 + 10)
+mod_7_0(1); // => 16   (6*1 + 10)
 ```
 
-## Source
+## Source Citation
 
 Source: src/repositories/file_7.js:L3-L10
 
