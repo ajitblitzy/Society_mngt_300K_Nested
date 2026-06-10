@@ -1,11 +1,17 @@
 # mod_21
 
-**Module identity:** `mod_21`
-**Layer:** `tests/integration`
-**Source file:** `tests/integration/file_21.js`
-**Functions:** 1,200 (`mod_21_0` … `mod_21_1199`)
+[← Back to API Reference catalog](../../index.md)
 
-> **Synthetic code note:** Although this module lives under `tests/`, the file contains no test runner, framework, or assertions. It declares the same synthetic arithmetic functions used throughout the codebase; this page documents only what is actually present.
+## Overview
+
+- **Module identity:** `mod_21`
+- **Layer:** `tests/integration`
+- **Source file:** `tests/integration/file_21.js`
+- **Functions:** 1,200 (`mod_21_0` … `mod_21_1199`)
+
+`mod_21` is one of two module identities in the `tests/integration` layer — alongside `mod_10` — and, like every identity in the codebase, it contains only the uniform arithmetic functions, with no business logic.
+
+> **Synthetic code.** Despite the `tests/integration` directory name, `mod_21` contains no test runner, assertions, or framework — every one of its functions is the same synthetic arithmetic routine, identical to the `src/` modules.
 
 ## Uniform Contract
 
@@ -1230,7 +1236,7 @@ mod_21_0(5); // === 40   (6*5 + 10)
 mod_21_0(1); // === 16   (6*1 + 10)
 ```
 
-## Source
+## Source Citation
 
 Source: tests/integration/file_21.js:L3-L10
 

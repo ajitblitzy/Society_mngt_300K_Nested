@@ -1,11 +1,17 @@
 # mod_10
 
-**Module identity:** `mod_10`
-**Layer:** `tests/integration`
-**Source file:** `tests/integration/file_10.js`
-**Functions:** 1,200 (`mod_10_0` … `mod_10_1199`)
+[← Back to API Reference catalog](../../index.md)
 
-> **Synthetic code note:** Although this module lives under `tests/`, the file contains no test runner, framework, or assertions. It declares the same synthetic arithmetic functions used throughout the codebase; this page documents only what is actually present.
+## Overview
+
+- **Module identity:** `mod_10`
+- **Layer:** `tests/integration`
+- **Source file:** `tests/integration/file_10.js`
+- **Functions:** 1,200 (`mod_10_0` … `mod_10_1199`)
+
+`mod_10` is one of two module identities in the `tests/integration` layer — alongside `mod_21` — and, like every identity in the codebase, it contains only the uniform arithmetic functions, with no business logic.
+
+> **Synthetic code.** Despite the `tests/integration` directory name, `mod_10` contains no test runner, assertions, or framework — every one of its functions is the same synthetic arithmetic routine, identical to the `src/` modules.
 
 ## Uniform Contract
 
@@ -1230,7 +1236,7 @@ mod_10_0(5); // === 40   (6*5 + 10)
 mod_10_0(1); // === 16   (6*1 + 10)
 ```
 
-## Source
+## Source Citation
 
 Source: tests/integration/file_10.js:L3-L10
 

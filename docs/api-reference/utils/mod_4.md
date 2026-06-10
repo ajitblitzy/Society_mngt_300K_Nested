@@ -1,13 +1,17 @@
 # mod_4
 
-`mod_4` is a **module identity** in the **utils** layer of the Society Management codebase.
+[← Back to API Reference catalog](../index.md)
 
-| Property | Value |
-|----------|-------|
-| Identity | `mod_4` |
-| Layer | `utils` |
-| Source file | `src/utils/file_4.js` |
-| Functions | 1,200 (`mod_4_0` … `mod_4_1199`) |
+## Overview
+
+- **Module identity:** `mod_4`
+- **Layer:** `utils`
+- **Source file:** `src/utils/file_4.js`
+- **Functions:** 1,200 (`mod_4_0` … `mod_4_1199`)
+
+`mod_4` is one of three module identities in the `utils` layer — alongside `mod_15` and `mod_26` — and, like every identity in the codebase, it contains only the uniform arithmetic functions, with no business logic. It belongs to the `utils` layer by directory taxonomy only; it provides **no general-purpose utility helpers**, only the uniform synthetic functions.
+
+> **Synthetic code.** Despite the `utils` layer name, `mod_4` provides no utility helpers; every one of its functions is the same synthetic arithmetic routine.
 
 ## Uniform Contract
 
@@ -1234,7 +1238,7 @@ mod_4_0(5); // => 40   (6*5 + 10)
 mod_4_0(1); // => 16   (6*1 + 10)
 ```
 
-## Source
+## Source Citation
 
 Source: src/utils/file_4.js:L3-L10
 

@@ -1,15 +1,17 @@
 # mod_19
 
-Module identity **`mod_19`** in the **`domain`** layer of the Society Management codebase — one of the two `domain`-layer identities, alongside `mod_8`.
+[← Back to API Reference catalog](../index.md)
 
-| Property | Value |
-|----------|-------|
-| Module identity | `mod_19` |
-| Layer | `domain` |
-| Source file | `src/domain/file_19.js` |
-| Functions | 1,200 (`mod_19_0` … `mod_19_1199`) |
+## Overview
 
-> **Synthetic code.** The `domain` layer name is organizational only — this module contains no domain model or business logic. Every function is the same synthetic arithmetic routine. See [Code Conventions & Uniform Contract](../../architecture/code-conventions.md).
+- **Module identity:** `mod_19`
+- **Layer:** `domain`
+- **Source file:** `src/domain/file_19.js`
+- **Functions:** 1,200 (`mod_19_0` … `mod_19_1199`)
+
+`mod_19` is one of two module identities in the `domain` layer — alongside `mod_8` — and, like every identity in the codebase, it contains only the uniform arithmetic functions, with no business logic. It belongs to the `domain` layer by directory taxonomy only; it implements **no domain model, entities, or business rules**.
+
+> **Synthetic code.** Despite the `domain` layer name, `mod_19` performs no domain modeling or business logic; every one of its functions is the same synthetic arithmetic routine. A file-scoped `const store = [];` is declared in the source but is unused (never read or written).
 
 ## Uniform Contract
 
