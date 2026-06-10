@@ -1,38 +1,36 @@
 # Ajit-backprop-test
 
 **Society Management** — a Python re-implementation of the original JavaScript
-modules. The codebase is being migrated from JavaScript to Python to improve
+modules. The codebase has been migrated from JavaScript to Python to improve
 code quality and structural performance while **preserving the existing public
 API and behavior** (no functional regressions). See
-[**Project status**](#project-status) for what exists today versus what is
-planned.
+[**Project status**](#project-status) for an overview of what the migration
+delivers.
 
 ---
 
 ## Project status
 
-This repository is being migrated from JavaScript to Python in stages. **The
-following is in place today:**
+The migration from JavaScript to Python is **complete**. The repository
+delivers:
 
 - the single canonical implementation, `society_compute(x)`, in
   `src/society_mgmt/core.py`;
-- the `src`-layout package skeleton — the `society_mgmt` package, its nine layer
+- the `src`-layout package — the `society_mgmt` package, its nine layer
   sub-packages, and the `tests` package tree;
 - the **name-preserving `mod_N_K` binding modules**
   (`src/society_mgmt/<layer>/file_*.py`) — **28,305** bindings across the 24
   production modules in the nine layers, each delegating to `society_compute`
-  (see **Overview — what changed** for how this number is derived); and
+  (see **Overview — what changed** for how this number is derived);
 - project packaging and tooling configuration: `pyproject.toml`,
-  `requirements.txt`, `.gitignore`, and `LICENSE`.
-
-**Planned for a subsequent checkpoint:** the genuine `pytest` equivalence test
-suite. The four JavaScript *test-source* modules become real pytest tests
-rather than binding modules — `tests/unit/file_9.js` →
-`tests/unit/test_file_9.py`, `tests/unit/file_20.js` →
-`tests/unit/test_file_20.py`, `tests/integration/file_10.js` →
-`tests/integration/test_file_10.py`, and `tests/integration/file_21.js` →
-`tests/integration/test_file_21.py`. Sections below mark anything that depends
-on those not-yet-created test files as **(planned)**.
+  `requirements.txt`, `.gitignore`, and `LICENSE`; and
+- the genuine `pytest` equivalence test suite. The four JavaScript
+  *test-source* modules are implemented as real pytest tests rather than binding
+  modules — `tests/unit/file_9.js` → `tests/unit/test_file_9.py`,
+  `tests/unit/file_20.js` → `tests/unit/test_file_20.py`,
+  `tests/integration/file_10.js` → `tests/integration/test_file_10.py`, and
+  `tests/integration/file_21.js` → `tests/integration/test_file_21.py`. The
+  suite contains **276 tests, all passing**.
 
 ---
 
@@ -61,11 +59,11 @@ in the **same repository**, applying the following changes:
 - **Dead-code elimination.** The comment-only padding file (`filler.js`) and the
   unused `const store = []` declaration in every module are dropped — they are
   not carried into the Python package.
-- **Real tests _(planned)_.** The four JavaScript *test-source* modules
+- **Real tests.** The four JavaScript *test-source* modules
   (`file_9`, `file_20` in `tests/unit/`; `file_10`, `file_21` in
   `tests/integration/`) contained no assertions; they are replaced with genuine
-  `pytest` equivalence tests that prove behavioral parity. That suite is added
-  in a subsequent checkpoint — these four modules are **not** turned into
+  `pytest` equivalence tests that prove behavioral parity. That suite now exists
+  and its **276 tests all pass** — these four modules are **not** turned into
   `mod_N_K` binding modules.
 
 > **A note on "performance."** The functions are pure, constant-time (`O(1)`)
@@ -84,7 +82,7 @@ two groups:
 | Group | Source files | Functions | Becomes |
 |-------|--------------|-----------|---------|
 | Production modules (nine layers) | 24 files | **28,305** | Name-preserving binding modules under `src/society_mgmt/<layer>/` |
-| Test-source modules | 4 files — `file_9`, `file_20` (unit); `file_10`, `file_21` (integration) | **4,800** | Genuine `pytest` equivalence tests _(planned)_ |
+| Test-source modules | 4 files — `file_9`, `file_20` (unit); `file_10`, `file_21` (integration) | **4,800** | Genuine `pytest` equivalence tests |
 
 So the in-scope, name-preserving public surface implemented as importable
 bindings is **28,305** (= 33,105 − 4,800), **not** 33,105: the 4,800 functions
@@ -120,10 +118,10 @@ structural fidelity with the original source — they carry **no** MVC,
 data-access, routing, or configuration behavior, because none existed in the
 source to preserve.
 
-**Current layout.** The canonical implementation lives in `core.py`, and every
-layer sub-package now contains its name-preserving `mod_N_K` binding modules.
-The `tests/` tree currently holds only its package markers (the `pytest` suite
-is planned — see below):
+**Layout.** The canonical implementation lives in `core.py`, every layer
+sub-package contains its name-preserving `mod_N_K` binding modules, and the
+`tests/` tree holds the genuine `pytest` equivalence suite alongside its package
+markers:
 
 ```
 .
@@ -147,17 +145,8 @@ is planned — see below):
 │       └── domain/             # __init__.py + file_8.py, file_19.py
 └── tests/
     ├── __init__.py
-    ├── unit/                   # __init__.py   (test_file_9.py, test_file_20.py — planned)
-    └── integration/            # __init__.py   (test_file_10.py, test_file_21.py — planned)
-```
-
-**Planned additions _(subsequent checkpoint)_.** Only the genuine `pytest`
-equivalence tests remain to be added to the `tests/` tree:
-
-```
-tests/
-├── unit/                   # + test_file_9.py, test_file_20.py
-└── integration/            # + test_file_10.py, test_file_21.py
+    ├── unit/                   # __init__.py + test_file_9.py, test_file_20.py
+    └── integration/            # __init__.py + test_file_10.py, test_file_21.py
 ```
 
 Each per-layer module imports the canonical implementation and re-exposes its
@@ -261,14 +250,15 @@ file_0.mod_0_0(2)    # -> 22  (name-preserving binding delegates to society_comp
 
 ## Running tests
 
-The test harness is already configured via `pyproject.toml`
+The test harness is configured via `pyproject.toml`
 (`testpaths = ["tests"]`, `pythonpath = ["src"]`), so no per-run setup is
 required.
 
-**(Planned)** The genuine `pytest` equivalence suite — unit tests in
-`tests/unit/` and cross-module parity tests in `tests/integration/` — is added
-in a subsequent checkpoint (see [Project status](#project-status)). Once those
-test files exist, run the full suite from the repository root with:
+The genuine `pytest` equivalence suite — unit tests in `tests/unit/`
+(`test_file_9.py`, `test_file_20.py`) and cross-module parity tests in
+`tests/integration/` (`test_file_10.py`, `test_file_21.py`) — proves behavioral
+parity with the original JavaScript contract. Run the full suite (**276 tests**)
+from the repository root with:
 
 ```bash
 pytest
