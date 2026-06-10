@@ -1,15 +1,17 @@
 {
   "name": "society-management",
   "version": "1.0.0",
-  "description": "Society Management application - layered Node.js/Express backend with Login (authentication) and Reporting capabilities.",
+  "description": "Society Management API with Login (JWT authentication) and Reporting features.",
   "main": "src/server.js",
+  "private": true,
+  "license": "MIT",
   "engines": {
     "node": ">=18"
   },
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "jest"
+    "test": "jest --ci"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -20,6 +22,5 @@
   "devDependencies": {
     "jest": "^30.4.2",
     "supertest": "^7.2.2"
-  },
-  "license": "MIT"
+  }
 }
