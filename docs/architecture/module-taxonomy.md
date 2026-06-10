@@ -1,74 +1,98 @@
-# Module Taxonomy (the `mod_N` scheme)
+# Module Taxonomy — the `mod_N` Identity Scheme
 
-This page documents the module-identity scheme that organizes the entire codebase: how identities are declared, how functions are named within an identity, and how the 28 identities map onto the directory layers.
+Every source and test file in the Society Management codebase is exactly one **module identity**, declared by the file's first-line header `// mod_N - society module`, and every function it contains is namespaced `mod_N_M(x)` — module identity `N`, ordinal `M`. This page documents that scheme end to end: how an identity is declared, how its functions are named, the complete identity → layer → file mapping, and the exact ordinal ranges and function counts.
 
-## One identity per file
+> **The code is synthetic.** The directory names (`controllers`, `services`, `models`, …) follow a conventional society-management vocabulary, but the files contain **no business logic and no framework wiring** — there are no `module.exports` / `require` statements and no Express, Mongoose, or Sequelize usage. The taxonomy below describes only the structure that is actually present; it does not ascribe runtime behavior (such as "handling requests") to any layer or identity. The shared behavior of every function is defined once in [Code Conventions & Uniform Contract](./code-conventions.md) and is not repeated here.
 
-Every source and test file is exactly one **module identity**. An identity is declared on the **first line** of its file with a header comment of the form:
+## Module Identity Header
 
-```javascript
-// mod_N - society module
-```
+Each module file opens with two fixed lines before any function is declared:
 
-…where `N` is the identity's number. For example, `src/controllers/file_0.js` begins with `// mod_0 - society module`, declaring identity `mod_0`. There are **28 identities**, numbered `mod_0` through `mod_27`, one per file. *(Source: `src/controllers/file_0.js:L1`)*
-
-Immediately after the header, each file declares a single file-scoped accumulator:
+- **Line 1 — identity header.** The comment `// mod_N - society module` declares the file's single **module identity**, where `N` is the identity number. For example, `src/controllers/file_0.js` begins with `// mod_0 - society module`, declaring identity `mod_0`. There are **28 identities**, `mod_0` through `mod_27`, one per file. *(Source: `src/controllers/file_0.js:L1`)*
+- **Line 2 — accumulator.** `const store = [];` is a file-scoped array declared in every module file. It is **unused** — no function in the file reads from or writes to it. *(Source: `src/controllers/file_0.js:L2`)*
 
 ```javascript
+// mod_0 - society module
 const store = [];
 ```
 
-…followed by that identity's function declarations.
+A file is recognized as a module identity solely by the `// mod_N - society module` header on its first line; a file without that header (see `filler.js` below) is **not** an identity.
 
-## Function naming: `mod_N_M`
+## Function Naming (`mod_N_M`)
 
-Within identity `mod_N`, functions are named `mod_N_M`, where `M` is the function's ordinal within the file, starting at `0`. So identity `mod_0` declares `mod_0_0`, `mod_0_1`, …, `mod_0_1199`; identity `mod_12` declares `mod_12_0` … `mod_12_1199`; and so on.
+Within identity `mod_N`, every function is named `mod_N_M`, where:
 
-- Each function takes a single parameter `x` and returns a number.
-- Every module file declares **1,200** functions (`mod_N_0` … `mod_N_1199`), except `mod_27`, which declares **705** (`mod_27_0` … `mod_27_704`).
+- **`N`** is the **module identity number** taken from the file's header (the same `N` for every function in the file), and
+- **`M`** is the **function ordinal** within that module, starting at `0` and increasing by one for each subsequent declaration.
 
-The shared body of every `mod_N_M(x)` is identical and is documented in [Code Conventions & Uniform Contract](code-conventions.md). *(Source: `src/controllers/file_0.js:L3-L10`)*
+So identity `mod_0` declares `mod_0_0`, `mod_0_1`, …; identity `mod_12` declares `mod_12_0`, `mod_12_1`, …; and so on. Every function shares the same signature:
 
-## Identity-to-layer map
+```
+mod_N_M(x) → number
+```
 
-The 28 identities are distributed across 11 layers as follows. Identity numbering is not contiguous within a layer; it reflects the order in which files were laid down across the tree.
+— a single numeric parameter `x` and a single numeric return value. The shared body and its computation (the **uniform contract**) are identical across all identities and ordinals; they are documented canonically in [Code Conventions & Uniform Contract](./code-conventions.md) and are intentionally not duplicated here.
 
-| Identity | Layer (directory) | Source file | Functions |
-| --- | --- | --- | --- |
-| `mod_0` | `src/controllers/` | `file_0.js` | 1,200 |
-| `mod_1` | `src/services/` | `file_1.js` | 1,200 |
-| `mod_2` | `src/models/` | `file_2.js` | 1,200 |
-| `mod_3` | `src/routes/` | `file_3.js` | 1,200 |
-| `mod_4` | `src/utils/` | `file_4.js` | 1,200 |
-| `mod_5` | `src/middleware/` | `file_5.js` | 1,200 |
-| `mod_6` | `src/config/` | `file_6.js` | 1,200 |
-| `mod_7` | `src/repositories/` | `file_7.js` | 1,200 |
-| `mod_8` | `src/domain/` | `file_8.js` | 1,200 |
-| `mod_9` | `tests/unit/` | `file_9.js` | 1,200 |
-| `mod_10` | `tests/integration/` | `file_10.js` | 1,200 |
-| `mod_11` | `src/controllers/` | `file_11.js` | 1,200 |
-| `mod_12` | `src/services/` | `file_12.js` | 1,200 |
-| `mod_13` | `src/models/` | `file_13.js` | 1,200 |
-| `mod_14` | `src/routes/` | `file_14.js` | 1,200 |
-| `mod_15` | `src/utils/` | `file_15.js` | 1,200 |
-| `mod_16` | `src/middleware/` | `file_16.js` | 1,200 |
-| `mod_17` | `src/config/` | `file_17.js` | 1,200 |
-| `mod_18` | `src/repositories/` | `file_18.js` | 1,200 |
-| `mod_19` | `src/domain/` | `file_19.js` | 1,200 |
-| `mod_20` | `tests/unit/` | `file_20.js` | 1,200 |
-| `mod_21` | `tests/integration/` | `file_21.js` | 1,200 |
-| `mod_22` | `src/controllers/` | `file_22.js` | 1,200 |
-| `mod_23` | `src/services/` | `file_23.js` | 1,200 |
-| `mod_24` | `src/models/` | `file_24.js` | 1,200 |
-| `mod_25` | `src/routes/` | `file_25.js` | 1,200 |
-| `mod_26` | `src/utils/` | `file_26.js` | 1,200 |
-| `mod_27` | `src/middleware/` | `file_27.js` | 705 |
+## Identity → Layer → File Mapping
 
-## What is *not* an identity
+The 28 module identities are distributed across the eleven **layers** of the directory taxonomy — nine under `src/` and two under `tests/`. The table below is grouped by layer; every cell was verified by reading each file's first-line header.
 
-`src/utils/filler.js` is **not** a module identity. Its first line is `// filler 298001` rather than a `// mod_N` header, and it declares no functions. It is a padding artifact only and has no API reference page. *(Source: `src/utils/filler.js:L1`)*
+| Layer | Module Identity | Source File |
+|-------|-----------------|-------------|
+| controllers | `mod_0` | `src/controllers/file_0.js` |
+| controllers | `mod_11` | `src/controllers/file_11.js` |
+| controllers | `mod_22` | `src/controllers/file_22.js` |
+| services | `mod_1` | `src/services/file_1.js` |
+| services | `mod_12` | `src/services/file_12.js` |
+| services | `mod_23` | `src/services/file_23.js` |
+| models | `mod_2` | `src/models/file_2.js` |
+| models | `mod_13` | `src/models/file_13.js` |
+| models | `mod_24` | `src/models/file_24.js` |
+| routes | `mod_3` | `src/routes/file_3.js` |
+| routes | `mod_14` | `src/routes/file_14.js` |
+| routes | `mod_25` | `src/routes/file_25.js` |
+| utils | `mod_4` | `src/utils/file_4.js` |
+| utils | `mod_15` | `src/utils/file_15.js` |
+| utils | `mod_26` | `src/utils/file_26.js` |
+| middleware | `mod_5` | `src/middleware/file_5.js` |
+| middleware | `mod_16` | `src/middleware/file_16.js` |
+| middleware | `mod_27` | `src/middleware/file_27.js` (705 functions) |
+| config | `mod_6` | `src/config/file_6.js` |
+| config | `mod_17` | `src/config/file_17.js` |
+| repositories | `mod_7` | `src/repositories/file_7.js` |
+| repositories | `mod_18` | `src/repositories/file_18.js` |
+| domain | `mod_8` | `src/domain/file_8.js` |
+| domain | `mod_19` | `src/domain/file_19.js` |
+| tests/unit | `mod_9` | `tests/unit/file_9.js` |
+| tests/unit | `mod_20` | `tests/unit/file_20.js` |
+| tests/integration | `mod_10` | `tests/integration/file_10.js` |
+| tests/integration | `mod_21` | `tests/integration/file_21.js` |
+
+That is **28 identities** in total. *(Source: `src/controllers/file_0.js:L1`)*
+
+> **Not an identity:** `src/utils/filler.js` also lives under the `utils` layer but is **not** a module identity. It carries no `// mod_N` header (its first line is `// filler 298001`) and declares no functions, so it is excluded from the table above and from every count below. It is described as a padding artifact in the next section. *(Source: `src/utils/filler.js:L1`)*
+
+## Ordinals & Counts
+
+The function ordinal `M` runs contiguously from `0` within each module identity:
+
+- **Standard module files:** ordinals run `mod_N_0` … `mod_N_1199`, i.e. **1,200 functions** per file.
+- **Exception — `mod_27`:** the identity in `src/middleware/file_27.js` runs `mod_27_0` … `mod_27_704`, i.e. **705 functions**. *(Source: `src/middleware/file_27.js:L1`)*
+- **Padding artifact — `filler.js`:** `src/utils/filler.js` declares **0 functions**; its first line is `// filler 298001` and the remainder is composed solely of `// filler NNNNNN` comment lines (up to `// filler 299999`). It is **not** a module identity and is excluded from the identity and function counts. *(Source: `src/utils/filler.js:L1`)*
+
+The counts roll up by location as follows:
+
+| Location | Module files | Functions | Derivation |
+|----------|--------------|-----------|------------|
+| `src/` | 24 | **28,305** | 23 files × 1,200 + `mod_27` (705) = 27,600 + 705 |
+| `tests/` | 4 | **4,800** | 4 files × 1,200 |
+| **Total** | **28** | **33,105** | 28,305 + 4,800 |
+
+So across the **28 module identities** there are **33,105 functions** in total — **28,305** under `src/` and **4,800** under `tests/`. The `filler.js` padding artifact contributes none of these.
 
 ## Related pages
 
-- [Code Conventions & Uniform Contract](code-conventions.md) — the shared `mod_N_M(x)` behavior and JSDoc standard.
-- [API Reference Index](../api-reference/index.md) — links to all 28 per-identity pages.
+- [Code Conventions & Uniform Contract](./code-conventions.md) — the canonical `mod_N_M(x) → number` body and the adopted JSDoc standard (the **uniform contract** this page refers to).
+- [Architecture Overview](./overview.md) — the layered directory taxonomy with the rendered repository / layer structure diagram.
+- [Project Structure](../getting-started/project-structure.md) — the same module map presented layer-first (the layer taxonomy view of the identities documented here).
+- [API Reference Index](../api-reference/index.md) — the per-identity catalog linking all 28 reference pages.
