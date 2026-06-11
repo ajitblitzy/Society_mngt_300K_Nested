@@ -285,7 +285,7 @@ A-102,Vikram Singh,2026-04,2500,2500,0
 - `401 Unauthorized` — no valid token was presented.
 
 ```json
-{ "error": { "message": "Unknown report type", "status": 400 } }
+{ "error": { "message": "Unknown report type: bogus", "status": 400 } }
 ```
 
 ## Status Codes
