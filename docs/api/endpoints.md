@@ -248,7 +248,7 @@ Authorization: Bearer eyJhbGciOi...
 ```
 
 ```json
-{ "type": "dues", "title": "Dues & Collection Summary", "generatedAt": "2026-01-01T00:00:00.000Z", "count": 2, "rows": [ { "unit": "A-101", "amountDue": 1500, "status": "paid" }, { "unit": "B-204", "amountDue": 1500, "status": "outstanding" } ] }
+{ "type": "dues", "title": "Dues & Collection Summary", "generatedAt": "2026-06-01T00:00:00.000Z", "count": 7, "rows": [ { "unitNumber": "A-101", "memberName": "Asha Rao", "period": "2026-05", "amountDue": 2500, "amountPaid": 2500, "balance": 0 }, { "unitNumber": "A-102", "memberName": "Vikram Singh", "period": "2026-05", "amountDue": 2500, "amountPaid": 1000, "balance": 1500 }, { "unitNumber": "B-201", "memberName": "Meera Nair", "period": "2026-05", "amountDue": 3000, "amountPaid": 3000, "balance": 0 }, { "unitNumber": "B-202", "memberName": "", "period": "2026-05", "amountDue": 3000, "amountPaid": 0, "balance": 3000 }, { "unitNumber": "C-301", "memberName": "Rahul Gupta", "period": "2026-05", "amountDue": 2500, "amountPaid": 0, "balance": 2500 }, { "unitNumber": "A-101", "memberName": "Asha Rao", "period": "2026-04", "amountDue": 2500, "amountPaid": 2500, "balance": 0 }, { "unitNumber": "A-102", "memberName": "Vikram Singh", "period": "2026-04", "amountDue": 2500, "amountPaid": 2500, "balance": 0 } ] }
 ```
 
 **CSV response (`?format=csv`).** `200 OK`, `Content-Type: text/csv`, with a
@@ -269,9 +269,14 @@ Content-Disposition: attachment; filename="dues-report.csv"
 ```
 
 ```csv
-unit,amountDue,status
-A-101,1500,paid
-B-204,1500,outstanding
+unitNumber,memberName,period,amountDue,amountPaid,balance
+A-101,Asha Rao,2026-05,2500,2500,0
+A-102,Vikram Singh,2026-05,2500,1000,1500
+B-201,Meera Nair,2026-05,3000,3000,0
+B-202,,2026-05,3000,0,3000
+C-301,Rahul Gupta,2026-05,2500,0,2500
+A-101,Asha Rao,2026-04,2500,2500,0
+A-102,Vikram Singh,2026-04,2500,2500,0
 ```
 
 **Errors:**
