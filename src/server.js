@@ -23,10 +23,19 @@
 // src/app.js and the feature layers it composes.
 //
 // STRICTLY ADDITIVE (non-regression mandate - AAP 0.1.2 / 0.6.2, criteria C1/C2).
-// This is a net-new CommonJS module. It requires ONLY the two new feature modules
-// it is allowed to depend on (./app and ./config) and never imports, references, or
-// mutates any pre-existing read-only scaffold module (the synthetic `file_*.js` /
-// `filler.js` padding files), which remain byte-identical and standalone.
+// This is a net-new CommonJS module. It requires ONLY new feature modules it is
+// allowed to depend on - ./app and ./config for bootstrap, plus ./utils/passwordUtils
+// solely so graceful shutdown can terminate that module's bcrypt worker-thread pool -
+// and never imports, references, or mutates any pre-existing read-only scaffold module
+// (the synthetic `file_*.js` / `filler.js` padding files), which remain byte-identical
+// and standalone.
+//
+// WORKER-POOL LIFECYCLE. The password-hashing helper (src/utils/passwordUtils.js) runs
+// bcrypt work in a small pool of worker threads to keep the event loop responsive
+// under concurrent auth load. Those workers are unref()'d when idle, so they never
+// block process exit on their own; nonetheless, the graceful-shutdown path below
+// explicitly terminates the pool (passwordUtils.shutdown()) after the HTTP server has
+// drained, for a clean, deterministic teardown with no lingering threads.
 //
 // CONFIG OWNERSHIP. src/config/index.js performs the application's single dotenv
 // load and exposes a frozen, typed config object. This module therefore does NOT
@@ -53,6 +62,12 @@ const app = require('./app');
 // and `config.nodeEnv` (for an informative startup log). config owns the one-time
 // dotenv load, so we intentionally do not touch dotenv here.
 const config = require('./config');
+
+// The password-hashing helper, imported here for ONE reason only: lifecycle cleanup.
+// It manages a pool of bcrypt worker threads; `passwordUtils.shutdown()` terminates
+// that pool during graceful shutdown so the process tears down deterministically.
+// No hashing logic lives here - this module never calls hash()/compare().
+const passwordUtils = require('./utils/passwordUtils');
 
 // ---------------------------------------------------------------------------
 // Resolve the HTTP port.
@@ -131,13 +146,29 @@ function gracefulShutdown(reason, exitCode) {
 
   // Stop accepting new connections and wait for in-flight requests to finish.
   server.close((closeErr) => {
+    // The HTTP server has now drained its connections (or failed to close). In-flight
+    // auth requests - the only thing that schedules bcrypt work - have therefore
+    // completed, so it is safe to terminate the worker-thread pool. We preserve the
+    // intended exit code (1 if the close itself errored, otherwise the caller's code)
+    // and ALWAYS exit after attempting pool teardown, so a teardown hiccup can never
+    // wedge the shutdown.
+    const finalCode = closeErr ? 1 : exitCode;
     if (closeErr) {
       console.error('[server] error while closing HTTP server:', closeErr);
-      process.exit(1);
-      return;
+    } else {
+      console.log('[server] HTTP server closed cleanly.');
     }
-    console.log('[server] HTTP server closed cleanly.');
-    process.exit(exitCode);
+
+    passwordUtils.shutdown()
+      .then(() => {
+        console.log('[server] password worker pool terminated.');
+      })
+      .catch((poolErr) => {
+        console.error('[server] error terminating password worker pool:', poolErr);
+      })
+      .finally(() => {
+        process.exit(finalCode);
+      });
   });
 
   // Safety net: if open connections keep the server from closing in time, force
