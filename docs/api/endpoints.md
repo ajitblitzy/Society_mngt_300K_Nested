@@ -282,10 +282,12 @@ A-102,Vikram Singh,2026-04,2500,2500,0
 **Errors:**
 
 - `400 Bad Request` — an unknown or unsupported `:type` (for example `/api/reports/bogus`).
+  The message is a fixed, generic `"Unknown report type"`; the requested `:type` value is
+  intentionally **not** echoed back into the response, so untrusted input is never reflected.
 - `401 Unauthorized` — no valid token was presented.
 
 ```json
-{ "error": { "message": "Unknown report type: bogus", "status": 400 } }
+{ "error": { "message": "Unknown report type", "status": 400 } }
 ```
 
 ## Status Codes

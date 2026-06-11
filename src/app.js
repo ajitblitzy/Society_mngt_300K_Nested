@@ -113,8 +113,49 @@ app.disable('x-powered-by');
 app.locals.config = config;
 
 // ---------------------------------------------------------------------------
+// Baseline security-response-header middleware.
+// ---------------------------------------------------------------------------
+// A tiny, dependency-free guard that stamps a fixed set of conservative security
+// headers onto EVERY response the API emits. It complements the `x-powered-by`
+// removal above to round out the feature's security baseline (AAP 0.8 / criterion
+// C6). The headers are non-negotiable defaults appropriate for a JSON/CSV REST API
+// that serves no HTML UI and no cross-origin frames:
+//   * X-Content-Type-Options: nosniff      - forbid MIME-type sniffing, so a JSON
+//                                             or CSV body is never re-interpreted
+//                                             (e.g. as HTML/script) by a browser.
+//   * X-Frame-Options: DENY                 - this API is never meant to be framed;
+//                                             denying framing removes clickjacking
+//                                             surface for any HTML error page too.
+//   * Cache-Control: no-store               - responses may carry member/dues data
+//                                             or tokens; never let a shared/browser
+//                                             cache retain API responses.
+//   * Strict-Transport-Security             - instruct compliant clients to pin
+//                                             HTTPS for a year (incl. subdomains).
+//                                             Harmless over plain HTTP (ignored by
+//                                             browsers on non-TLS) and correct once
+//                                             TLS is terminated in front of the app.
+//
+// It is registered as the FIRST middleware - BEFORE `express.json()` - so the
+// headers are present on absolutely every response, including ones produced before
+// a router runs (e.g. a 400 from the JSON body parser on malformed input, or a 413
+// on an oversized body) and the terminal 404 / error envelopes below. Setting a
+// response header changes neither status code nor body, so no documented endpoint
+// contract is altered. It does no async work and simply calls `next()`.
+function securityHeaders(req, res, next) {
+  res.set('X-Content-Type-Options', 'nosniff');
+  res.set('X-Frame-Options', 'DENY');
+  res.set('Cache-Control', 'no-store');
+  res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
+}
+
+// ---------------------------------------------------------------------------
 // Global middleware (registered BEFORE the feature routers; order matters).
 // ---------------------------------------------------------------------------
+
+// Install the baseline security headers FIRST so they apply to every response,
+// including body-parser rejections (400/413), the terminal 404, and error envelopes.
+app.use(securityHeaders);
 
 // Parse `application/json` request bodies into `req.body`. Express 5 ships this
 // body parser built in (no separate `body-parser` dependency). It must precede the
@@ -150,6 +191,34 @@ app.use('/api/auth', authRoutes);
 // Reporting feature: report endpoints under `/api/reports/*` (each guarded inside
 // the router by the authentication middleware - Reporting-depends-on-Login).
 app.use('/api/reports', reportRoutes);
+
+// ---------------------------------------------------------------------------
+// Terminal not-found handler (catch-all for unmatched routes).
+// ---------------------------------------------------------------------------
+// Registered AFTER every real route (health, /api/auth, /api/reports) but BEFORE
+// the error handler. Any request that matched none of the routes above falls
+// through to here; we synthesize a 404 Error and forward it via `next(err)` so the
+// SAME centralized errorHandler renders it as the uniform JSON envelope
+// `{ error: { message: 'Not Found', status: 404 } }` with `Content-Type:
+// application/json`. Without this, Express 5's built-in final handler would answer
+// an unmatched route with a framework-style HTML page ("Cannot GET /api/nope"),
+// which breaks the single documented error contract and leaks the framework's
+// default error output.
+//
+// This is an ORDINARY (3-argument) middleware, NOT an error handler, so registering
+// it here does NOT displace `errorHandler` as the LAST `app.use`. It is mounted
+// path-less on purpose: in Express 5 (path-to-regexp v8) a bare `app.use('*', ...)`
+// throws at registration time, whereas a path-less `app.use(...)` correctly runs for
+// every method and path that reaches it (i.e. everything not already handled).
+//
+// The message is the GENERIC literal 'Not Found' - it deliberately does NOT echo
+// the requested URL/path back into the response body, avoiding reflecting any
+// attacker-controlled value into the error envelope.
+app.use((req, res, next) => {
+  const notFoundError = new Error('Not Found');
+  notFoundError.status = 404;
+  next(notFoundError);
+});
 
 // ---------------------------------------------------------------------------
 // Terminal error boundary (MUST be the LAST `app.use`).

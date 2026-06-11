@@ -267,7 +267,14 @@ function buildReport(type) {
     case REPORT_TYPES.OCCUPANCY:
       return buildOccupancyReport();
     default:
-      throw reportError('Unknown report type: ' + type, 400);
+      // Generic message ONLY: never interpolate the untrusted `type` (the raw,
+      // URL-decoded `:type` path segment) into the error. Echoing it would reflect
+      // attacker-controlled input into BOTH the client response body AND the
+      // centralized WARN log (errorHandler logs `err.message` for 4xx). The 400
+      // status still marks this a client error; the request URL - which Express
+      // keeps percent-ENCODED on `req.originalUrl` - is still logged separately by
+      // requestLogger/errorHandler for diagnostics, so no signal is lost.
+      throw reportError('Unknown report type', 400);
   }
 }
 
@@ -303,7 +310,10 @@ function buildReport(type) {
 function generateReport(type, options = {}) {
   // Validate up front so an unknown type fails fast with a 400 before any work.
   if (!isValidReportType(type)) {
-    throw reportError('Unknown report type: ' + type, 400);
+    // Generic message ONLY (no raw `type` interpolation) - mirrors buildReport's
+    // default branch: the untrusted, URL-decoded `:type` must never be reflected
+    // into the response body or the WARN log. Status 400 still marks the client error.
+    throw reportError('Unknown report type', 400);
   }
 
   // Defensive format resolution: honor only a recognized format, else default JSON.
