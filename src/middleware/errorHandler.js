@@ -18,10 +18,14 @@
 // `'Internal Server Error'` message - internal exception text and stack traces are
 // NEVER sent to the client, preventing information disclosure. Client faults (4xx)
 // may surface `err.message` because those messages are written for callers (e.g.
-// "Email is required"). Server-side logging deliberately records only the request
-// method, URL, derived status and the error's diagnostic detail; it NEVER logs
-// request bodies, the `Authorization` header, tokens, passwords, or password
-// hashes - avoiding sensitive material is enforced here at the single call site.
+// "Email is required"). Server-side logging is SPLIT BY STATUS CLASS: a 5xx server
+// fault is logged at ERROR level WITH its full diagnostic detail (stack) for
+// debugging, while a routine 4xx client fault is logged at WARN level with only a
+// concise `<method> <url> -> <status>` line plus the error's message (NO stack), so
+// expected client errors do not flood the log with stack traces and file paths.
+// Logging NEVER includes request bodies, the `Authorization` header, tokens,
+// passwords, or password hashes - avoiding sensitive material is enforced here at
+// the single call site.
 //
 // MODULE SYSTEM: CommonJS only (`require` / `module.exports`); no ESM. The only
 // dependency is the project logger. The pre-existing scaffold modules are
@@ -148,7 +152,26 @@ function errorHandler(err, req, res, next) {
 
   // Phase 2 - record the failure server-side with request context only. No request
   // body, no Authorization header, no tokens/passwords are ever passed here.
-  logger.error(`${describeRequest(req)} -> ${status}`, describeError(err));
+  //
+  // Log verbosity is split by status CLASS so the log stays readable and full
+  // diagnostic detail is reserved for genuine server faults:
+  //   * 5xx (server faults)  -> logger.error WITH the full diagnostic detail
+  //     (the stack trace). These are unexpected and the stack is needed to debug them.
+  //   * 4xx (client faults)  -> logger.warn with ONLY the concise
+  //     "<method> <url> -> <status>" context plus the error's own (non-sensitive)
+  //     message. Routine, EXPECTED client errors (401 unauthenticated, 400 invalid
+  //     input, 409 duplicate, ...) must NOT drag a full stack trace - with absolute
+  //     file paths - into the log on every such request; that is server-side noise,
+  //     not a diagnostic signal.
+  // In BOTH branches the client response is identical and nothing sensitive (request
+  // body, Authorization header, token, password, or hash) is ever logged:
+  // describeRequest emits only method + URL, and describeError (5xx only) emits the
+  // error's own stack/message.
+  if (status >= 500) {
+    logger.error(`${describeRequest(req)} -> ${status}`, describeError(err));
+  } else {
+    logger.warn(`${describeRequest(req)} -> ${status}`, (err && err.message) || FALLBACK_CLIENT_MESSAGE);
+  }
 
   // Guard against a double-send: if the response has already begun streaming, we
   // cannot rewrite the status/body - hand the error to Express's default handler.

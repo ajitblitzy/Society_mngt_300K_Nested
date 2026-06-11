@@ -215,9 +215,12 @@ function issueToken(user) {
 /**
  * Register a new Society Management user.
  *
- * Validates the payload, enforces email uniqueness, hashes the password with the
- * async bcrypt API at the configured cost, persists the record, and returns the
- * leak-safe public view of the created user (never the password hash).
+ * Validates the payload, hashes the password with the async bcrypt API at the
+ * configured cost, then enforces email uniqueness and persists the record in a
+ * single uninterrupted (await-free) step, and returns the leak-safe public view
+ * of the created user (never the password hash). Performing the only `await`
+ * (the hash) BEFORE the uniqueness-check/insert pair closes the check-then-insert
+ * (TOCTOU) race so concurrent same-email registrations cannot both succeed.
  *
  * Validation / error contract (every thrown Error carries a numeric `.status`):
  *   - 400 when `email` or `password` is missing/blank.
@@ -280,15 +283,30 @@ async function register(input = {}) {
     resolvedRole = role;
   }
 
-  // --- uniqueness (the repository does NOT enforce this) ----------------------
-  // findByEmail is case-insensitive, matching how the record stores the email.
+  // --- hash with the ASYNC bcrypt API at the configured cost ------------------
+  // Never the sync API; the plaintext and the resulting hash are never logged.
+  //
+  // CONCURRENCY / TOCTOU CLOSE: hashing is the ONLY awaited (event-loop-yielding)
+  // step in this function, so it is deliberately performed HERE -- BEFORE the
+  // uniqueness check -- rather than between the check and the insert. Doing so
+  // guarantees the findByEmail->create pair below executes with NO `await` in
+  // between, i.e. atomically within a single event-loop turn. Two simultaneous
+  // registrations for the same email therefore cannot both pass the uniqueness
+  // check: whichever request resumes first inserts the record, and the other then
+  // observes it via findByEmail and is correctly rejected with 409. (The 400
+  // validation gates above intentionally run BEFORE this hash so malformed input
+  // is still rejected without spending bcrypt CPU.)
+  const passwordHash = await passwordUtils.hash(password, config.bcryptRounds);
+
+  // --- uniqueness + persist: ATOMIC (no `await` between the check and create) --
+  // Email-uniqueness is a business rule owned by this service; the repository
+  // deliberately does NOT enforce it (AAP layering). findByEmail is
+  // case-insensitive, matching how the record stores the email. Because no `await`
+  // separates this check from create() below, the check-and-insert is atomic for
+  // concurrent same-email requests (the TOCTOU window is closed by the hash above).
   if (userRepository.findByEmail(email)) {
     throw authError('Email already registered', 409);
   }
-
-  // --- hash with the ASYNC bcrypt API at the configured cost ------------------
-  // Never the sync API; the plaintext and the resulting hash are never logged.
-  const passwordHash = await passwordUtils.hash(password, config.bcryptRounds);
 
   // --- persist + return the leak-safe public view -----------------------------
   // The repository shapes the record via userModel.createUser (which lower-cases
