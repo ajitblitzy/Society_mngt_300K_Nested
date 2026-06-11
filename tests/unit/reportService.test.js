@@ -26,6 +26,7 @@ process.env.BCRYPT_ROUNDS = '4';
 
 const reportService = require('../../src/services/reportService');
 const csvExporter = require('../../src/utils/csvExporter');
+const reportModel = require('../../src/models/reportModel');
 
 describe('reportService', () => {
   describe('computeDaysOverdue', () => {
@@ -194,5 +195,45 @@ describe('reportService', () => {
     it('doubles embedded double-quotes and wraps the field', () => {
       expect(csvExporter.escapeCsvValue('he said "hi"')).toBe('"he said ""hi"""');
     });
+  });
+});
+
+// Direct MODEL-LAYER guard (MAJOR review finding): createDuesRow must ALWAYS derive
+// balance = amountDue - amountPaid and must NEVER let a caller-supplied `balance`
+// override that canonical value (AAP 0.5.2 / compliance criterion #6).
+describe('reportModel.createDuesRow', () => {
+  it('derives balance = amountDue - amountPaid when no balance is supplied', () => {
+    const row = reportModel.createDuesRow({ amountDue: 100, amountPaid: 30 });
+    expect(row.balance).toBe(70);
+  });
+
+  it('IGNORES a caller-supplied balance and still derives amountDue - amountPaid', () => {
+    const row = reportModel.createDuesRow({ amountDue: 100, amountPaid: 30, balance: 9999 });
+    expect(row.balance).toBe(70);
+  });
+
+  it('ignores a supplied balance even when amounts are absent (defaults to 0 - 0 = 0)', () => {
+    const row = reportModel.createDuesRow({ balance: 12345 });
+    expect(row.balance).toBe(0);
+  });
+
+  it('produces exactly the six canonical dues keys with a derived balance', () => {
+    const row = reportModel.createDuesRow({
+      unitNumber: 'A1',
+      memberName: 'X',
+      period: '2026-05',
+      amountDue: 50,
+      amountPaid: 20,
+      balance: -1,
+    });
+    expect(Object.keys(row)).toEqual([
+      'unitNumber',
+      'memberName',
+      'period',
+      'amountDue',
+      'amountPaid',
+      'balance',
+    ]);
+    expect(row.balance).toBe(30);
   });
 });

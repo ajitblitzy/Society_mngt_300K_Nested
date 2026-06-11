@@ -255,19 +255,31 @@ function clear() {
  *
  * @param {function(string): Promise<string>} hashFn - Async function that hashes
  *   a plaintext password and resolves to the hash. REQUIRED.
- * @param {Object} [options={}] - Optional overrides for the seeded admin.
+ * @param {Object} options - Overrides for the seeded admin. MUST carry a non-empty
+ *   `password`; `email` and `name` are optional.
  * @param {string} [options.email='admin@society.local'] - Admin email.
- * @param {string} [options.password='ChangeMe123!'] - Plaintext password to hash.
- *   This default is an intentionally-weak placeholder meant to be overridden via
- *   configuration in any real deployment; it is not a real credential.
+ * @param {string} options.password - Plaintext password to hash. REQUIRED and
+ *   non-empty. It MUST be supplied by the caller from the environment/config or a
+ *   trusted bootstrap; NO default credential is embedded in source code (AAP C6 /
+ *   CWE-798). When omitted or empty the function throws and seeds nothing.
  * @param {string} [options.name='Society Administrator'] - Admin display name.
  * @returns {Promise<Object>} A clone of the existing-or-newly-created admin record.
- * @throws {Error} When `hashFn` is not a function (message contains "hashFn").
+ * @throws {Error} When `hashFn` is not a function (message contains "hashFn"), or
+ *   when `options.password` is missing/empty (message contains "password").
  */
 async function seedDefaultAdmin(hashFn, options = {}) {
   if (typeof hashFn !== 'function') {
     throw new Error(
       'userRepository.seedDefaultAdmin: an async hashFn(plaintext) is required'
+    );
+  }
+
+  // SECURITY (AAP C6 / CWE-798): never embed a default credential in source. The
+  // plaintext password MUST be supplied by the caller (from environment/config or a
+  // trusted bootstrap); refuse to seed an admin with a missing or empty password.
+  if (typeof options.password !== 'string' || options.password.length === 0) {
+    throw new Error(
+      'userRepository.seedDefaultAdmin: a non-empty options.password is required'
     );
   }
 
@@ -279,7 +291,7 @@ async function seedDefaultAdmin(hashFn, options = {}) {
     return existing;
   }
 
-  const passwordHash = await hashFn(options.password || 'ChangeMe123!');
+  const passwordHash = await hashFn(options.password);
   return create({
     email,
     passwordHash,

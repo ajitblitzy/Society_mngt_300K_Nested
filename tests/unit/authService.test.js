@@ -20,11 +20,11 @@
 // CRITICAL setup ordering: these env vars MUST be assigned BEFORE any require(). src/config/authConfig
 // reads JWT_SECRET from process.env at module-load time, and the first require below (authService)
 // transitively loads src/config -> authConfig. Setting JWT_SECRET first guarantees a real signing
-// secret so the login token verifies during the success-path assertion; BCRYPT_ROUNDS keeps hashing
-// cheap. (authConfig enforces a secure minimum of 10 rounds, so '4' is clamped up to 10 with a benign
-// warning - hashing stays fast enough for deterministic, headless tests either way.)
+// secret so the login token verifies during the success-path assertion. BCRYPT_ROUNDS is pinned to
+// the secure minimum (10) that authConfig enforces, so the value is accepted as-is and NO config
+// warning is emitted - hashing stays deterministic and fast enough for headless tests.
 process.env.JWT_SECRET = 'test-secret';
-process.env.BCRYPT_ROUNDS = '4';
+process.env.BCRYPT_ROUNDS = '10';
 
 const authService = require('../../src/services/authService');
 const userRepository = require('../../src/repositories/userRepository');

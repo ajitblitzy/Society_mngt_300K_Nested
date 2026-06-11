@@ -8,8 +8,8 @@
 //   * NO data access / seeding                  (belongs to src/repositories/reportRepository.js),
 //   * NO CSV / string serialization             (belongs to src/utils/csvExporter.js),
 //   * NO HTTP / file / DB I/O, no logging, no networking, and nothing async.
-// The ONLY computation permitted here is the documented dues `balance` default
-// (amountDue - amountPaid) when a balance is not supplied.
+// The ONLY computation permitted here is the canonical dues `balance`, which is
+// ALWAYS derived as (amountDue - amountPaid); any caller-supplied balance is ignored.
 //
 // Consumers load this module via CommonJS `require('../models/reportModel')`:
 //   - src/services/reportService.js      -> maps source rows from
@@ -187,23 +187,24 @@ function createMemberRow(input = {}) {
  * Returns a plain object with EXACTLY these keys: `unitNumber`, `memberName`,
  * `period` (trimmed strings, default `''`), `amountDue`, `amountPaid` (finite
  * numbers, default `0`), and `balance`. The `balance` field is the ONLY permitted
- * derivation in this module: when a `balance` is not supplied it defaults to
- * `amountDue - amountPaid`; when supplied it is coerced to a finite number. Key
- * SET and ORDER match `REPORT_COLUMNS[REPORT_TYPES.DUES]`.
+ * derivation in this module and is ALWAYS computed as `amountDue - amountPaid` from
+ * the normalized amounts. A caller-supplied `balance` is intentionally IGNORED so it
+ * can never disagree with the canonical derivation (AAP 0.5.2 / compliance criterion:
+ * the dues balance must only ever be `amountDue - amountPaid`). Key SET and ORDER
+ * match `REPORT_COLUMNS[REPORT_TYPES.DUES]`.
  *
- * @param {object} [input={}] - Raw dues fields.
+ * @param {object} [input={}] - Raw dues fields. Any `balance` property is ignored.
  * @param {string} [input.unitNumber] - Unit identifier.
  * @param {string} [input.memberName] - Resident/member display name.
  * @param {string} [input.period] - Billing period (e.g. '2026-05').
  * @param {number} [input.amountDue] - Amount billed for the period.
  * @param {number} [input.amountPaid] - Amount collected for the period.
- * @param {number} [input.balance] - Optional explicit balance; derived from
- *   `amountDue - amountPaid` when omitted/null.
  * @returns {{ unitNumber: string, memberName: string, period: string,
- *   amountDue: number, amountPaid: number, balance: number }} The normalized dues row.
+ *   amountDue: number, amountPaid: number, balance: number }} The normalized dues
+ *   row, with `balance` always equal to `amountDue - amountPaid`.
  */
 function createDuesRow(input = {}) {
-  const { unitNumber, memberName, period, amountDue, amountPaid, balance } = asObject(input);
+  const { unitNumber, memberName, period, amountDue, amountPaid } = asObject(input);
   const due = toNum(amountDue);
   const paid = toNum(amountPaid);
   return {
@@ -212,9 +213,10 @@ function createDuesRow(input = {}) {
     period: toStr(period),
     amountDue: due,
     amountPaid: paid,
-    // The sole permitted derivation: when no balance is provided, compute it from
-    // the normalized due/paid amounts; otherwise coerce the provided value.
-    balance: balance == null ? due - paid : toNum(balance),
+    // The sole permitted derivation: the dues balance is ALWAYS computed from the
+    // normalized due/paid amounts. A caller-supplied `balance` is deliberately not
+    // read (it is not destructured above) so it can never override this value.
+    balance: due - paid,
   };
 }
 
