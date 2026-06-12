@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=77.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "society-mgmt"
+version = "1.0.0"
+description = "Python re-implementation of the Society Management modules (JavaScript to Python refactor)."
+readme = "README.md"
+requires-python = ">=3.14"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Ajit" }]
+keywords = ["society", "refactor", "migration", "python"]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest==9.0.3", "ruff==0.15.16"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"

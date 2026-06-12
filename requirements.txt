@@ -1,0 +1,9 @@
+# Runtime dependencies: none — the society_mgmt package uses only the Python standard library.
+#
+# Development / test tooling (pinned):
+pytest==9.0.3
+ruff==0.15.16
+
+# Optional (uncomment and pin to the current PyPI release if adopted):
+# pytest-cov
+# mypy
