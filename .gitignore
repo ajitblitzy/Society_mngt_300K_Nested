@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Generated lockfile - intentionally NOT committed during the setup baseline.
+# Regenerate locally with `npm install`.
+package-lock.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor cruft
+Thumbs.db
+.DS_Store

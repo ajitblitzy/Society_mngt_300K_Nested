@@ -1,0 +1,13 @@
+{
+  "name": "society-mgmt-300k",
+  "version": "1.0.0",
+  "description": "Ajit-backprop-test - synthetic society management modules used for backprop integration testing.",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.20.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
