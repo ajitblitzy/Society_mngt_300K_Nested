@@ -4,7 +4,7 @@ A test project for backprop integration, now reframed as the target of a **JavaS
 
 > ⚠ **Blocking precondition — action required before migration can begin.**
 >
-> This repository currently contains **only this README plus the Python baseline configuration** — there is **no application source code yet**. In particular, **no JavaScript/Node.js source is present to scan, diagnose, or port.**
+> This repository currently contains **only this README** — there is **no application source code yet**, and the Python project scaffolding (configuration, dependency manifests, and tooling) described below is **planned, not yet created**. In particular, **no JavaScript/Node.js source is present to scan, diagnose, or port.**
 >
 > **Required user action:** add the JavaScript/Node.js source to this repository (or provide its location). Until the source is supplied, the migration plan described below is **ready to execute but not yet active** — the scan, performance diagnosis, and port cannot proceed without it.
 
@@ -22,7 +22,7 @@ Behavioral parity is evidenced by **porting the existing test suite to `pytest` 
 
 ## Planned target architecture
 
-> **Planned/target layout.** The structure below is what the migration will instantiate; it does **not** exist today beyond the baseline configuration files. Module names under `src/<package>/` are finalized against the actual JavaScript modules once the source is supplied — nothing under `src/` or `tests/` exists yet.
+> **Planned/target layout.** The structure below is what the migration will instantiate; **none of it exists today**. Module names under `src/<package>/` are finalized against the actual JavaScript modules once the source is supplied — none of the files shown below (the configuration and dependency manifests, the tooling, and everything under `src/` and `tests/`) exists yet.
 
 ```text
 Ajit-backprop-test/
@@ -74,7 +74,7 @@ Ajit-backprop-test/
 
 ## Target technology stack
 
-The dependency and configuration baseline (`requirements.txt`, `requirements-dev.txt`, `pyproject.toml`, `.python-version`, `.env.example`) is already established in this repository; the application source that consumes it is the planned target. Versions below are fixed where the Agent Action Plan verified them (June 2026) and given as safe minimums otherwise.
+The dependency and configuration files (`requirements.txt`, `requirements-dev.txt`, `pyproject.toml`, `.python-version`, `.env.example`) are part of the **planned** project scaffolding — they are created during the migration and are **not present today**. Versions below are fixed where the Agent Action Plan verified them (June 2026) and given as safe minimums otherwise.
 
 | Component | Version | Role (maps from) |
 | --- | --- | --- |
@@ -87,14 +87,14 @@ The dependency and configuration baseline (`requirements.txt`, `requirements-dev
 | pydantic-settings | >=2.0 | Typed env configuration (removes hardcoded secrets) |
 | httpx | >=0.28 | Async HTTP client (axios / node-fetch) |
 | pytest (+ pytest-asyncio) | >=8.0 | Test framework (Jest / Mocha) |
-| ruff + black + isort | latest stable at lock time | Lint / format (ESLint / Prettier) |
+| ruff + black + isort | pinned at lock time | Lint / format (ESLint / Prettier) |
 | asyncpg / psycopg / aiosqlite | per database | Async DB driver (selected by the target DB) |
 
 The npm → PyPI dependency mapping is finalized and pinned once the JavaScript manifest (`package.json`) is supplied: each declared npm package is mapped to a vetted PyPI equivalent and pinned at lock time.
 
 ## Setup, run, test & migration (planned workflow)
 
-> **Planned workflow.** Dependency installation works against the baseline today. The **run**, **test**, and **migration** steps become active **once the JavaScript source is ported** — there is no application source or test suite to execute yet.
+> **Planned workflow.** Every step below is **planned** — it becomes active **once the JavaScript source is supplied and the Python project scaffolding is created**. None of it can run today: there is no dependency manifest, application source, or test suite in the repository yet.
 
 **1. Create a virtual environment and install dependencies**
 
@@ -163,8 +163,13 @@ The migration is delivered as a **single cohesive change set** once the JavaScri
 
 ## Next steps
 
-1. **Add the JavaScript/Node.js source to this repository (or provide its location).** This is the primary blocker; it unblocks the scan → diagnose → port workflow described above.
-2. Scan and inventory the modules and npm dependencies; map each npm package to its PyPI equivalent and pin versions.
-3. Port the test suite to `pytest` to establish the characterization/parity baseline.
-4. Migrate the application layer by layer into the planned `src/<package>/` structure.
-5. Diagnose and remediate the performance bottlenecks; benchmark before/after to confirm both parity and improvement.
+Once the JavaScript/Node.js source is available, the migration proceeds as a single cohesive change set:
+
+1. Scan and inventory the modules and npm dependencies; map each npm package to its PyPI equivalent and pin versions.
+2. Port the test suite to `pytest` to establish the characterization/parity baseline.
+3. Migrate the application layer by layer into the planned `src/<package>/` structure.
+4. Diagnose and remediate the performance bottlenecks; benchmark before/after to confirm both parity and improvement.
+
+Every step above is blocked on one prerequisite, which is therefore the single action required now:
+
+**Add the JavaScript/Node.js source to this repository (or provide its location).**
