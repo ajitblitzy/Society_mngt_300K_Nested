@@ -1,0 +1,9 @@
+# Development & test tooling for the planned JS -> Python migration target.
+# Source: AAP Section 0.5.1 (test framework) and Section 0.3.3 (quality tooling).
+-r requirements.txt
+
+pytest>=8.0
+pytest-asyncio>=0.24
+ruff
+black
+isort
