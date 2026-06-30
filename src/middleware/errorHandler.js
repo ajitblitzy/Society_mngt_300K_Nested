@@ -40,9 +40,10 @@
  *  - Client errors (HTTP 4xx) surface the error's own `message`, because that
  *    text is intended to guide the caller (e.g. validation feedback).
  *  - Server-side logging is performed exclusively through `utils/logger` and is
- *    limited to the request method, URL, derived status and the error
- *    message/stack. Request bodies, the `Authorization` header, tokens and
- *    passwords are NEVER logged.
+ *    limited to the request method, URL PATH (the query string is stripped, since
+ *    it can carry tokens/secrets), derived status, and an error detail (stack for
+ *    5xx, message for 4xx). Request bodies, the `Authorization` header, tokens,
+ *    query strings and passwords are NEVER logged.
  *
  * MODULE SYSTEM: CommonJS only (`require` / `module.exports`); no ESM syntax.
  * DEPENDENCIES: `../utils/logger` is the ONLY dependency of this module.
@@ -57,9 +58,9 @@ const logger = require('../utils/logger');
  *        was thrown or forwarded via `next(err)`. May carry an explicit HTTP
  *        `status` or `statusCode`; the handler defaults to `500` when neither
  *        is present (or when `err` itself is null/undefined).
- * @param {express.Request} req - The incoming request. Used only for
- *        log context (`method` and `originalUrl`); its body/headers are never
- *        read here.
+ * @param {express.Request} req - The incoming request. Used only for log context
+ *        (`method` and the URL PATH, with any query string stripped); its body
+ *        and headers are never read here.
  * @param {express.Response} res - The outgoing response that carries
  *        the error envelope back to the client.
  * @param {express.NextFunction} next - Express continuation callback.
@@ -78,16 +79,25 @@ function errorHandler(err, req, res, next) {
   const status = (err && (err.status || err.statusCode)) || 500;
 
   // Phase 2 — Log the failure server-side with useful request context but
-  // WITHOUT any sensitive data. Only the method, URL and derived status are
-  // recorded, alongside a diagnostic detail derived from the error. We prefer
-  // the stack trace (most useful for 5xx triage), fall back to the message,
-  // and finally to the raw error value. Request bodies, the Authorization
-  // header, tokens and passwords are deliberately never referenced here.
+  // WITHOUT any sensitive data. Only the method, URL PATH and derived status are
+  // recorded, alongside a diagnostic detail derived from the error.
+  //
+  // SECURITY (C6): the query string is STRIPPED from the logged URL — exactly as
+  // `requestLogger.js` does — because query parameters can carry secrets (for
+  // example `?token=...` or `?password=...`). Only the path before any `?` is
+  // logged. Request bodies, the Authorization header, tokens and passwords are
+  // likewise deliberately never referenced here.
   const method = (req && req.method) || 'UNKNOWN';
-  const url = (req && (req.originalUrl || req.url)) || 'unknown';
+  const rawUrl = (req && (req.originalUrl || req.url)) || 'unknown';
+  const queryStart = rawUrl.indexOf('?');
+  const urlPath = queryStart === -1 ? rawUrl : rawUrl.slice(0, queryStart);
 
+  // Tier the diagnostic detail by severity: a full stack trace is reserved for
+  // server faults (5xx), where it aids triage; client errors (4xx) log only the
+  // concise message (no stack noise). When neither is available, the raw error
+  // value is used as a last resort.
   let detail;
-  if (err && err.stack) {
+  if (status >= 500 && err && err.stack) {
     detail = err.stack;
   } else if (err && err.message) {
     detail = err.message;
@@ -95,7 +105,7 @@ function errorHandler(err, req, res, next) {
     detail = err;
   }
 
-  logger.error(`${method} ${url} -> ${status}`, detail);
+  logger.error(`${method} ${urlPath} -> ${status}`, detail);
 
   // Phase 3 — If the response has already begun streaming, we cannot set a new
   // status or body. Delegate to Express's default (finalhandler) error handler,

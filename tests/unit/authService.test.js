@@ -34,6 +34,9 @@ const authService = require('../../src/services/authService');
 const userRepository = require('../../src/repositories/userRepository');
 const tokenUtils = require('../../src/utils/tokenUtils');
 const config = require('../../src/config');
+// Used only by the trusted admin-seeding test below as the async `hashFn` that
+// `userRepository.seedDefaultAdmin` delegates password hashing to.
+const passwordUtils = require('../../src/utils/passwordUtils');
 
 // A password that satisfies the policy: >= 8 chars, contains letters AND a digit.
 const PASSWORD = 'passw0rd';
@@ -125,13 +128,23 @@ describe('authService', () => {
       expect(err.status).toBe(400);
     });
 
-    it('creates an admin when role: admin is provided', async () => {
-      const admin = await authService.register({
-        email: 'admin@example.com',
+    it('ignores a caller-supplied role and always defaults to member (no privilege escalation)', async () => {
+      // SECURITY (AAP §0.8 / CP2): generic/public registration must NEVER honor a
+      // caller-supplied role. Even when an attacker submits role: 'admin', the
+      // created account is a plain member — there is no path from this untrusted
+      // input to an elevated role. Admins are provisioned only via the trusted
+      // seeding path exercised in the 'trusted admin seeding' suite below.
+      const user = await authService.register({
+        email: 'sneaky@example.com',
         password: PASSWORD,
         role: 'admin',
       });
-      expect(admin.role).toBe('admin');
+      expect(user.role).toBe('member');
+
+      // Defense in depth: the PERSISTED record is a member too, proving the
+      // escalation is blocked at the service boundary, not merely in the response.
+      const stored = userRepository.findByEmail('sneaky@example.com');
+      expect(stored.role).toBe('member');
     });
   });
 
@@ -165,6 +178,41 @@ describe('authService', () => {
       expect(err.status).toBe(401);
       // Identical to the unknown-email case: no path reveals which check failed.
       expect(err.message).toBe('Invalid email or password');
+    });
+
+    it('returns an IDENTICAL generic 401 for unknown-email, wrong-password, AND locked-account (parity)', async () => {
+      // ANTI-ENUMERATION PARITY (AAP C6): capture the error from all three
+      // distinct failure modes in a SINGLE test and assert they are byte-identical
+      // in both `.status` and `.message`, so no branch reveals which check failed.
+
+      // 1) Unknown email.
+      const unknownErr = await catchError(
+        authService.login({ email: 'ghost@example.com', password: PASSWORD }),
+      );
+
+      // 2) Wrong password against a known, not-yet-locked account.
+      await authService.register({ email: 'wrong@example.com', password: PASSWORD });
+      const wrongPassErr = await catchError(
+        authService.login({ email: 'wrong@example.com', password: 'wrongpass9' }),
+      );
+
+      // 3) Locked account: cross the failed-attempt threshold (using the EXPORTED
+      // constant), then attempt the CORRECT password — rejected because locked.
+      await authService.register({ email: 'locked@example.com', password: PASSWORD });
+      for (let i = 0; i < authService.MAX_FAILED_ATTEMPTS; i += 1) {
+        await catchError(authService.login({ email: 'locked@example.com', password: 'wrongpass9' }));
+      }
+      const lockedErr = await catchError(
+        authService.login({ email: 'locked@example.com', password: PASSWORD }),
+      );
+
+      // Parity: identical status AND message across all three branches.
+      expect(unknownErr.status).toBe(401);
+      expect(wrongPassErr.status).toBe(401);
+      expect(lockedErr.status).toBe(401);
+      expect(unknownErr.message).toBe('Invalid email or password');
+      expect(wrongPassErr.message).toBe(unknownErr.message);
+      expect(lockedErr.message).toBe(unknownErr.message);
     });
   });
 
@@ -201,6 +249,47 @@ describe('authService', () => {
       expect(found).toMatchObject({ id: created.id, email: 'me@example.com', role: 'member' });
       expect(found).not.toHaveProperty('passwordHash');
       expect(authService.getUserById('does-not-exist')).toBeNull();
+    });
+  });
+
+  describe('trusted admin seeding (userRepository.seedDefaultAdmin)', () => {
+    // The async hashFn the repository delegates to — mirrors how authService
+    // hashes, using the configured (cheap, in tests) bcrypt cost factor.
+    const hashFn = (plaintext) => passwordUtils.hash(plaintext, config.bcryptRounds);
+
+    it('creates an admin ONLY through the explicit trusted path, with an explicit password', async () => {
+      // This is the SOLE sanctioned way to provision an administrator: an
+      // explicit, trusted call supplying a hashFn and an explicit (non-hard-coded)
+      // password. The generic register() path can never produce an admin.
+      const admin = await userRepository.seedDefaultAdmin(hashFn, {
+        email: 'root@society.local',
+        password: 'Admin1234',
+        name: 'Root Admin',
+      });
+      expect(admin.role).toBe('admin');
+      expect(admin.email).toBe('root@society.local');
+      // The explicit password was bcrypt-hashed (never stored as plaintext).
+      expect(admin.passwordHash).toMatch(/^\$2[aby]\$/);
+      expect(admin.passwordHash).not.toBe('Admin1234');
+
+      // The seeded admin can authenticate, and its token carries the admin role —
+      // proving the trusted path is the genuine source of administrators.
+      const { token, user } = await authService.login({ email: 'root@society.local', password: 'Admin1234' });
+      expect(user.role).toBe('admin');
+      const payload = tokenUtils.verify(token, config.jwt.secret, { algorithms: ['HS256'] });
+      expect(payload.role).toBe('admin');
+    });
+
+    it('refuses to seed an admin without an explicit password (no hard-coded credential)', async () => {
+      // SECURITY regression gate: there is NO default password. Omitting it must
+      // throw, so an account is never created with a known, embedded credential.
+      const err = await catchError(
+        userRepository.seedDefaultAdmin(hashFn, { email: 'nopass@society.local' }),
+      );
+      expect(err).toBeInstanceOf(Error);
+      expect(err.message).toMatch(/password is required/i);
+      // Nothing was persisted for that email.
+      expect(userRepository.findByEmail('nopass@society.local')).toBeNull();
     });
   });
 });

@@ -18,8 +18,11 @@
 // Build-order / dependency note: this module has NO internal/project requires and
 // MUST remain loadable before src/config/index.js (which depends on THIS module).
 // It therefore intentionally does NOT load its sibling './index' module — doing
-// so would create a circular dependency. Its only external dependency is
-// `dotenv` (declared in the root package.json).
+// so would create a circular dependency. It also has NO external dependency: it
+// deliberately does NOT load `dotenv` itself. The single, canonical dotenv load
+// for the whole application happens once in src/config/index.js (which loads
+// dotenv BEFORE it requires this module), so this module is a PURE function of
+// `process.env` — it only reads and normalizes already-populated variables.
 //
 // Module system: CommonJS (require / module.exports). No ESM syntax is used here.
 // Additive-only: this module references no pre-existing scaffold module and
@@ -28,20 +31,21 @@
 'use strict';
 
 // ---------------------------------------------------------------------------
-// Defensive, idempotent environment load.
+// NO environment loading here — this module is intentionally PURE.
 //
-// `dotenv.config()` parses the project `.env` file (when present) and copies any
-// variables it defines into `process.env` WITHOUT overwriting variables that are
-// already set. Because of that non-overwriting behavior, calling it here is safe
-// and harmless even though `src/config/index.js` performs the canonical, single
-// application-wide load: if `index.js` (or the host environment / process
-// manager) has already populated `process.env`, this call is effectively a no-op.
+// `dotenv.config()` is NOT called in this module. The application performs its
+// single, canonical `.env` load exactly once in `src/config/index.js`, which
+// loads dotenv BEFORE it `require()`s this module — so by the time the code
+// below runs through the normal config path, `process.env` is already populated.
+// Removing the previously-present defensive `dotenv.config()` here eliminates the
+// duplicate load (and its duplicate dotenv "injected env" log lines) and keeps
+// exactly one place responsible for reading `.env` (Technical Spec / AAP §0.5.2,
+// review CP2 config single-load requirement).
 //
-// The reason we still load here is robustness in isolation: when this module is
-// require()'d directly — most notably by focused unit tests that do not go
-// through `index.js` — this guard ensures the `.env` values are still available,
-// so the exported configuration is correct on every code path.
-require('dotenv').config();
+// Direct, isolated consumers do not need a `.env` load: callers obtain config via
+// `src/config/index.js` (post-dotenv), and focused unit tests assign the relevant
+// `process.env` values explicitly before requiring any config module. This module
+// therefore simply reads and normalizes whatever is already in `process.env`.
 
 // ---------------------------------------------------------------------------
 // Read & normalize the authentication settings from the environment.

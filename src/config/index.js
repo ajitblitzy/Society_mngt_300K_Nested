@@ -18,10 +18,11 @@
  *
  * ──────────────────────────────────────────────────────────────────────────
  * DESIGN CONSTRAINTS (per Technical Specification / Agent Action Plan):
- *  - CANONICAL SINGLE LOAD: `dotenv.config()` is invoked exactly once here.
- *    `src/config/authConfig.js` performs a defensive (idempotent) load so it
- *    stays correct when imported in isolation (e.g. unit tests), but THIS file
- *    is the canonical application-wide load point.
+ *  - CANONICAL SINGLE LOAD: `dotenv.config()` is invoked exactly once here, and
+ *    ONLY here. `src/config/authConfig.js` is a PURE env-normalization module
+ *    that does NOT load dotenv; this file loads dotenv BEFORE requiring it, so
+ *    the whole application performs exactly one `.env` load (no duplicate dotenv
+ *    side effects or repeated "injected env" log lines).
  *  - SINGLE SOURCE FOR AUTH SETTINGS: the JWT and bcrypt values are NOT re-read
  *    from `process.env` here; they are re-exported from `./authConfig`, so there
  *    is exactly one place that interprets those variables.
@@ -57,9 +58,10 @@
 
 // Canonical single load point for the whole application. `dotenv.config()`
 // reads the local `.env` file (when present) into `process.env`. It is invoked
-// exactly ONCE here; other modules either read `process.env` directly or load
-// dotenv defensively (dotenv never overwrites variables already set, so the
-// duplicate defensive load in authConfig.js is harmless).
+// exactly ONCE here — and nowhere else — and crucially BEFORE `./authConfig` is
+// required just below, so the pure `authConfig` module observes a fully
+// populated `process.env`. Because no other module loads dotenv, there is a
+// single `.env` load with no duplicate dotenv "injected env" log lines.
 require('dotenv').config();
 
 // Re-use the already-normalized JWT/bcrypt settings rather than re-reading those

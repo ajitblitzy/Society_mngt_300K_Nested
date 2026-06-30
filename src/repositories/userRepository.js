@@ -222,11 +222,21 @@ function clear() {
 /**
  * Optionally seed a default administrator account (idempotent, async).
  *
+ * This is the explicit, TRUSTED admin-provisioning path for the Login feature —
+ * the only sanctioned way to create an `admin` user. The generic
+ * `authService.register` API never assigns an elevated role, so administrators
+ * are created exclusively here, by trusted bootstrap/setup code.
+ *
  * Hashing is CPU-bound and asynchronous, so it is delegated to a caller-supplied
  * `hashFn` (e.g. `passwordUtils.hash`). This keeps the repository free of any
  * password-hashing concern and free of a `bcryptjs` dependency. The operation is
  * idempotent: if an admin with the resolved email already exists, the existing
  * record (clone) is returned and no duplicate is created.
+ *
+ * SECURITY: the admin `password` MUST be supplied explicitly by the trusted
+ * caller (sourced from environment / secret management). There is intentionally
+ * NO default password — a missing or blank `options.password` throws, so this
+ * helper can never create an account with a known, hard-coded credential.
  *
  * IMPORTANT: this function is OPTIONAL and is NOT invoked at module load, by
  * `src/app.js`, or by `src/server.js`. It exists so a future bootstrap/service
@@ -234,14 +244,15 @@ function clear() {
  *
  * @param {function(string): Promise<string>} hashFn Async function that maps a
  *   plaintext password to its hash. REQUIRED.
- * @param {object} [options={}] Optional overrides.
+ * @param {object} options Admin attributes. REQUIRED, and MUST carry `password`.
+ * @param {string} options.password Plaintext admin password to hash. REQUIRED and
+ *   non-empty; sourced from secure configuration (never hard-coded).
  * @param {string} [options.email='admin@society.local'] Admin login email.
- * @param {string} [options.password='ChangeMe123!'] Plaintext password to hash.
  * @param {string} [options.name='Society Administrator'] Admin display name.
  * @returns {Promise<object>} A clone of the existing-or-newly-created admin
  *   user record.
- * @throws {Error} `userRepository.seedDefaultAdmin: an async hashFn(plaintext)
- *   is required` when `hashFn` is not a function.
+ * @throws {Error} When `hashFn` is not a function, or when `options.password`
+ *   is missing/blank.
  */
 async function seedDefaultAdmin(hashFn, options = {}) {
   if (typeof hashFn !== 'function') {
@@ -249,12 +260,24 @@ async function seedDefaultAdmin(hashFn, options = {}) {
       'userRepository.seedDefaultAdmin: an async hashFn(plaintext) is required'
     );
   }
+  // SECURITY: never embed a usable default credential in source. The admin
+  // password MUST be supplied explicitly by the trusted caller (sourced from
+  // environment / secret management). A missing or blank password is a hard
+  // error rather than a silent fallback, so no account is ever created with a
+  // known, hard-coded password.
+  const password = options.password;
+  if (typeof password !== 'string' || password.trim() === '') {
+    throw new Error(
+      'userRepository.seedDefaultAdmin: an explicit non-empty password is required ' +
+        '(provide options.password from secure configuration)'
+    );
+  }
   const email = normalizeEmail(options.email || 'admin@society.local');
   const existing = findByEmail(email);
   if (existing) {
     return existing;
   }
-  const passwordHash = await hashFn(options.password || 'ChangeMe123!');
+  const passwordHash = await hashFn(password);
   return create({
     email,
     passwordHash,

@@ -47,7 +47,7 @@
 
 const userRepository = require('../repositories/userRepository'); // { create, findByEmail, findById, update, findAll, count, clear, seedDefaultAdmin }
 const { toPublicUser } = require('../models/userModel');           // toPublicUser(user) -> { id, email, role, name, createdAt, updatedAt } | null
-const { DEFAULT_ROLE, isValidRole } = require('../domain/user');   // DEFAULT_ROLE = 'member'; isValidRole(role) -> boolean
+const { DEFAULT_ROLE } = require('../domain/user');                // DEFAULT_ROLE = 'member' (public registration is ALWAYS this role)
 const passwordUtils = require('../utils/passwordUtils');           // async { hash(password, rounds), compare(password, hash) } — bcryptjs
 const tokenUtils = require('../utils/tokenUtils');                 // { sign(payload, secret, options), verify(token, secret) } — jsonwebtoken
 const validation = require('../utils/validation');                // { isNonEmptyString, isValidEmail, isValidPassword, getMissingFields, hasRequiredFields }
@@ -163,8 +163,14 @@ function recordFailedAttempt(user) {
  */
 function issueToken(user) {
   const payload = { sub: user.id, email: user.email, role: user.role };
+  // Sign with an explicit symmetric algorithm so signing and verification stay
+  // in lockstep: `authMiddleware` verifies with `{ algorithms: ['HS256'] }`, so
+  // tokens MUST be signed with HS256. This is jsonwebtoken's default for a string
+  // secret, but it is pinned here to make the sign/verify contract explicit and
+  // immune to future default changes or misconfiguration.
   return tokenUtils.sign(payload, config.jwt.secret, {
     expiresIn: config.jwt.expiresIn,
+    algorithm: 'HS256',
   });
 }
 
@@ -176,29 +182,32 @@ function issueToken(user) {
  * with the async bcrypt API and the configured cost factor, persists the record,
  * and returns the sanitized public view (never the password hash).
  *
- * SECURITY — role assignment: the role defaults to {@link DEFAULT_ROLE}
- * (`'member'`). A `role` is honoured only when explicitly supplied AND valid; to
- * prevent privilege escalation via public self-registration, the public
- * controller/route MUST call this with only `{ email, password, name }` (so the
- * role defaults to member). The `role` parameter exists so trusted/seed flows and
- * unit tests can provision administrators.
+ * SECURITY — role assignment (privilege-escalation prevention): this generic,
+ * public registration path ALWAYS assigns the least-privileged
+ * {@link DEFAULT_ROLE} (`'member'`). Any `role` present on `input` (e.g.
+ * `'admin'`) is intentionally IGNORED — there is deliberately NO code path from
+ * this untrusted-input-driven API to an elevated role. Administrators are
+ * provisioned EXCLUSIVELY through the explicit, trusted seeding path
+ * (`userRepository.seedDefaultAdmin`, which requires a hashing function and an
+ * explicit password), never through this function.
  *
  * @param {object} [input={}] - The registration payload (request body).
  * @param {string} input.email - Login email; normalized to lower-case on persist.
  * @param {string} input.password - Plaintext password (min 8 chars, ≥1 letter,
  *   ≥1 digit). Hashed before storage; never persisted or logged in plaintext.
  * @param {string} [input.name] - Optional display name.
- * @param {string} [input.role] - Optional role; only trusted callers should set
- *   this. Defaults to `'member'`.
  * @returns {Promise<object>} The public user view
- *   `{ id, email, role, name, createdAt, updatedAt }` (no `passwordHash` or
- *   lockout fields).
+ *   `{ id, email, role, name, createdAt, updatedAt }` — always with
+ *   `role === 'member'`; never `passwordHash` or lockout fields.
  * @throws {Error} `.status === 400` when required fields are missing, the email
- *   is invalid, the password is too weak, or an explicit role is invalid.
+ *   is invalid, or the password is too weak.
  * @throws {Error} `.status === 409` when the email is already registered.
  */
 async function register(input = {}) {
-  const { email, password, name, role } = input || {};
+  // NOTE: `role` is deliberately NOT destructured or honored here. Public
+  // registration ALWAYS creates a least-privileged member (see role assignment
+  // below), so a caller-supplied role on the request body has no effect.
+  const { email, password, name } = input || {};
 
   // Required-field guard. A clear (non-enumerating) 400 — registration is a
   // public-creation flow, so it may surface specific validation messages.
@@ -215,15 +224,14 @@ async function register(input = {}) {
     );
   }
 
-  // SECURITY: public registration must default to 'member'; clients must not be
-  // able to self-assign 'admin'. Only honour an explicitly provided, valid role.
-  let resolvedRole = DEFAULT_ROLE;
-  if (role !== undefined && role !== null && role !== '') {
-    if (!isValidRole(role)) {
-      throw authError('Invalid role', 400);
-    }
-    resolvedRole = role;
-  }
+  // SECURITY (privilege-escalation prevention): the generic/public registration
+  // path ALWAYS assigns the least-privileged DEFAULT_ROLE ('member'). Any
+  // caller-supplied `role` (e.g. 'admin') in the request body is intentionally
+  // IGNORED — there is no path from this untrusted-input-driven service API to an
+  // elevated role. Administrators are provisioned ONLY through the explicit,
+  // trusted seeding path (`userRepository.seedDefaultAdmin`, which requires a
+  // hashing function and an explicit password), never via this function.
+  const resolvedRole = DEFAULT_ROLE;
 
   // Uniqueness is THIS service's responsibility (the repository does not enforce
   // it). The lookup is case-insensitive, matching how the record is stored.

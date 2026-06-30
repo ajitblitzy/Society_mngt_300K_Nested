@@ -79,18 +79,31 @@ function sign(payload, secret, options = {}) {
  * `jsonwebtoken`'s typed errors to propagate so the caller can map them to a
  * generic `401 Unauthorized` response:
  *  - `TokenExpiredError`  — the token's `exp` has passed.
- *  - `JsonWebTokenError`  — malformed token, invalid signature, or secret mismatch.
+ *  - `JsonWebTokenError`  — malformed token, invalid signature, unexpected
+ *                           algorithm, or secret mismatch.
  *  - `NotBeforeError`     — the token's `nbf` claim is still in the future.
+ *
+ * SECURITY — algorithm pinning: callers SHOULD pass an explicit
+ * `{ algorithms: ['HS256'] }` allow-list via `options` so verification only ever
+ * accepts the symmetric algorithm the tokens are signed with. Pinning the
+ * algorithm closes algorithm-confusion / `alg: none` attack vectors and guards
+ * against future signer misconfiguration; an unexpected `alg` then surfaces as a
+ * `JsonWebTokenError` (mapped to a generic 401 upstream). `options` is forwarded
+ * verbatim to `jwt.verify`, so any other jsonwebtoken verify option (e.g.
+ * `issuer`, `audience`, `clockTolerance`) is equally supported. It defaults to an
+ * empty object so existing callers that omit it keep working unchanged.
  *
  * @param {string} token                    The encoded JWT to validate.
  * @param {string|Buffer} secret            Symmetric secret used to sign the token (caller-provided).
+ * @param {Object} [options={}]             `jsonwebtoken` verify options — most importantly
+ *                                          `{ algorithms: ['HS256'] }` to pin the accepted algorithm(s).
  * @returns {Object|string}                 The decoded/verified token payload.
  * @throws {import('jsonwebtoken').JsonWebTokenError|import('jsonwebtoken').TokenExpiredError|import('jsonwebtoken').NotBeforeError}
  *                                          Surfaced unchanged for the caller (auth
  *                                          middleware) to handle as a 401.
  */
-function verify(token, secret) {
-  return jwt.verify(token, secret);
+function verify(token, secret, options = {}) {
+  return jwt.verify(token, secret, options);
 }
 
 module.exports = { sign, verify };

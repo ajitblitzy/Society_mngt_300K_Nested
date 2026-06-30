@@ -25,6 +25,9 @@ process.env.BCRYPT_ROUNDS = '4';
 
 const reportService = require('../../src/services/reportService');
 const csvExporter = require('../../src/utils/csvExporter');
+// Imported so the outstanding/occupancy tests can independently derive their
+// expected results from the SAME raw seed the service aggregates from.
+const reportRepository = require('../../src/repositories/reportRepository');
 
 describe('reportService', () => {
   describe('computeDaysOverdue', () => {
@@ -70,10 +73,33 @@ describe('reportService', () => {
       });
     });
 
-    it('outstanding report: only balance>0, exact 5-key shape, daysOverdue>=0', () => {
+    it('outstanding report is derived from raw dues rows (balance>0), retaining dueDate and daysOverdue', () => {
       const r = reportService.buildOutstandingReport();
       expect(r.type).toBe('outstanding');
-      expect(r.rows.length).toBeGreaterThan(0);
+
+      // Independently derive the EXPECTED outstanding set straight from the raw
+      // repository dues rows (which still carry `dueDate`). A row is outstanding
+      // iff amountDue - amountPaid > 0, and its outstanding `amountDue` is that
+      // remaining balance. Deriving from the raw source (not the dues DTO, which
+      // DROPS dueDate) catches an implementation that builds outstanding rows from
+      // the DTO and mishandles/loses `dueDate` while still emitting positive rows.
+      const expected = reportRepository.getDues()
+        .map((d) => ({
+          unitNumber: d.unitNumber,
+          memberName: d.memberName,
+          balance: Number(d.amountDue) - Number(d.amountPaid),
+          dueDate: d.dueDate,
+        }))
+        .filter((d) => d.balance > 0);
+
+      // Count parity with the raw-derived expectation (and a non-trivial set).
+      expect(expected.length).toBeGreaterThan(0);
+      expect(r.rows.length).toBe(expected.length);
+
+      // Key the expected rows by unitNumber (unique among the balance>0 seed set)
+      // for precise per-row comparison.
+      const expectedByUnit = new Map(expected.map((e) => [e.unitNumber, e]));
+
       r.rows.forEach((row) => {
         // EXACTLY these five keys — proves the outstanding DTO shape is fixed.
         expect(Object.keys(row).sort()).toEqual([
@@ -83,17 +109,26 @@ describe('reportService', () => {
           'memberName',
           'unitNumber',
         ]);
-        // amountDue is the remaining (unpaid) balance; > 0 proves fully-paid
-        // units are excluded by the balance>0 filter.
+
+        const exp = expectedByUnit.get(row.unitNumber);
+        expect(exp).toBeDefined();
+        // amountDue is the REMAINING (unpaid) balance from the raw dues row.
+        expect(row.amountDue).toBe(exp.balance);
         expect(row.amountDue).toBeGreaterThan(0);
+        expect(row.memberName).toBe(exp.memberName);
+        // dueDate is carried through from the RAW dues row (the dues DTO drops it).
+        expect(row.dueDate).toBe(exp.dueDate);
+        // daysOverdue is computed from that same raw dueDate (>= 0 always).
+        expect(row.daysOverdue).toBe(reportService.computeDaysOverdue(exp.dueDate));
         expect(row.daysOverdue).toBeGreaterThanOrEqual(0);
       });
+
       // The seed contains fully-paid dues rows that must be filtered out, so the
       // outstanding set is strictly smaller than the full dues set.
       expect(r.rows.length).toBeLessThan(reportService.buildDuesReport().rows.length);
     });
 
-    it('occupancy report has rows and a matching count', () => {
+    it('occupancy report reflects the seeded occupied/vacant distribution and total occupants', () => {
       const r = reportService.buildOccupancyReport();
       expect(r.type).toBe('occupancy');
       expect(r.rows.length).toBeGreaterThan(0);
@@ -102,6 +137,33 @@ describe('reportService', () => {
         expect(typeof row.unitNumber).toBe('string');
         expect(typeof row.status).toBe('string');
       });
+
+      // Independently derive the EXPECTED occupancy semantics from the seeded
+      // source rows, then assert the service report matches — proving the
+      // occupied/vacant split and occupant totals are computed correctly, not
+      // merely that some rows exist.
+      const seed = reportRepository.getOccupancy();
+      const expectedOccupied = seed.filter((o) => o.status === 'occupied').length;
+      const expectedVacant = seed.filter((o) => o.status === 'vacant').length;
+      const expectedTotalOccupants = seed.reduce((sum, o) => sum + Number(o.occupantsCount), 0);
+
+      const reportOccupied = r.rows.filter((row) => row.status === 'occupied').length;
+      const reportVacant = r.rows.filter((row) => row.status === 'vacant').length;
+      const reportTotalOccupants = r.rows.reduce((sum, row) => sum + Number(row.occupantsCount), 0);
+
+      // Sanity on the seed itself: a coherent society with BOTH occupied & vacant
+      // units, and every unit classified as exactly one of the two.
+      expect(expectedOccupied).toBeGreaterThan(0);
+      expect(expectedVacant).toBeGreaterThan(0);
+      expect(expectedOccupied + expectedVacant).toBe(seed.length);
+
+      // The report must reproduce the seeded distribution and occupant total.
+      expect(reportOccupied).toBe(expectedOccupied);
+      expect(reportVacant).toBe(expectedVacant);
+      expect(reportTotalOccupants).toBe(expectedTotalOccupants);
+      // Vacant units contribute zero occupants, so occupants live only in occupied
+      // units — the total is therefore strictly positive for this seed.
+      expect(reportTotalOccupants).toBeGreaterThan(0);
     });
   });
 

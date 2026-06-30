@@ -228,11 +228,14 @@ function createOccupancyRow({ unitNumber, status, occupantName, occupantsCount }
  *
  * @type {Readonly<Record<string, ReadonlyArray<string>>>}
  */
+// Each nested column array is frozen as well, not just the outer object, so the
+// map is genuinely DEEP-frozen: a consumer cannot mutate (push/splice/reassign
+// index) e.g. `REPORT_COLUMNS.dues` and drift the canonical CSV header order.
 const REPORT_COLUMNS = Object.freeze({
-  [REPORT_TYPES.MEMBERS]:     ['unitNumber', 'memberName', 'email', 'phone', 'role'],
-  [REPORT_TYPES.DUES]:        ['unitNumber', 'memberName', 'period', 'amountDue', 'amountPaid', 'balance'],
-  [REPORT_TYPES.OUTSTANDING]: ['unitNumber', 'memberName', 'amountDue', 'dueDate', 'daysOverdue'],
-  [REPORT_TYPES.OCCUPANCY]:   ['unitNumber', 'status', 'occupantName', 'occupantsCount'],
+  [REPORT_TYPES.MEMBERS]:     Object.freeze(['unitNumber', 'memberName', 'email', 'phone', 'role']),
+  [REPORT_TYPES.DUES]:        Object.freeze(['unitNumber', 'memberName', 'period', 'amountDue', 'amountPaid', 'balance']),
+  [REPORT_TYPES.OUTSTANDING]: Object.freeze(['unitNumber', 'memberName', 'amountDue', 'dueDate', 'daysOverdue']),
+  [REPORT_TYPES.OCCUPANCY]:   Object.freeze(['unitNumber', 'status', 'occupantName', 'occupantsCount']),
 });
 
 /**

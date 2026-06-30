@@ -97,8 +97,14 @@ function authenticate(req, res, next) {
   // and throws (TokenExpiredError / JsonWebTokenError / NotBeforeError) on any
   // failure; we translate EVERY throw into one generic 401 so the client cannot
   // distinguish "expired" from "tampered" from "wrong secret".
+  //
+  // SECURITY: pin the accepted signing algorithm to the symmetric HS256 that
+  // `tokenUtils.sign` (via authService) uses. Supplying an explicit
+  // `algorithms` allow-list to `jwt.verify` defends against algorithm-confusion
+  // and `alg: none` attacks — a token presenting any other algorithm fails
+  // verification and falls through to the generic 401 below.
   try {
-    const decoded = tokenUtils.verify(token, config.jwt.secret);
+    const decoded = tokenUtils.verify(token, config.jwt.secret, { algorithms: ['HS256'] });
     req.user = decoded;
     return next();
   } catch (err) {
