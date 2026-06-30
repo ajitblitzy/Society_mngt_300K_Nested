@@ -1,10 +1,27 @@
 """mod_7 - society module (repositories layer).
 
-Name-preserving bindings ported from the original ``src/repositories/file_7.js``.
-Each ``mod_7_K`` delegates to :func:`society_mgmt.core.society_compute`, so the
-arithmetic exists exactly once (DRY). ``repositories`` is a structural label only
-and carries no data-access or persistence behavior (none existed in the source);
-the behavioral contract is documented centrally in :mod:`society_mgmt.core`.
+Name-preserving Python port of the original ``src/repositories/file_7.js``.
+``repositories`` is a structural label only: this module carries no
+data-access, persistence, or Repository-pattern behavior, because none
+existed in the JavaScript source. Every public name ``mod_7_0`` ..
+``mod_7_1199`` is re-exposed as a thin, name-preserving binding that
+delegates to :func:`society_mgmt.core.society_compute`, so the arithmetic
+lives in exactly one place (DRY / Extract-Function).
+
+Behavioral contract (preserved from the source):
+    ``r = x * 1 + x * 2 + x * 3`` (i.e. ``6 * x``); then ``10`` is added
+    when ``r`` is even. For integer ``x`` the intermediate ``6 * x`` is
+    always even, so ``+10`` always applies; for non-integer ``x`` the
+    parity test genuinely governs the result. For example,
+    ``mod_7_0(0) == 10``, ``mod_7_0(1) == 16`` and ``mod_7_0(0.5) == 3.0``.
+
+Parity boundaries (documented; JS quirks intentionally NOT replicated):
+    * JavaScript ``Number`` is an IEEE-754 double and loses precision above
+      ``2**53``; Python ``int`` is exact, so Python is strictly more correct
+      there. The contract is pinned to the safe-integer domain.
+    * JavaScript implicit string-to-number coercion (``"5" * 1 === 5``) is
+      not reproduced: the contract is numeric-domain only, so passing a
+      ``str`` raises ``TypeError`` (Pythonic explicitness).
 """
 
 from society_mgmt.core import society_compute
