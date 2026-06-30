@@ -1,3 +1,4 @@
+// csvExporter.js - Vanilla RFC 4180 CSV serializer for reporting.
 'use strict';
 
 /**

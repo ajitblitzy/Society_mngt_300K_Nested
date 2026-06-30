@@ -1,3 +1,4 @@
+// passwordUtils.js - Async bcryptjs password hashing and comparison helpers.
 'use strict';
 
 /**

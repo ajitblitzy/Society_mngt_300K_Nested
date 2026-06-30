@@ -1,3 +1,4 @@
+// logger.js - Minimal dependency-free logging helper for Society Management.
 'use strict';
 
 /**

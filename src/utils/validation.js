@@ -1,3 +1,4 @@
+// validation.js - Lightweight dependency-free validators for request payloads.
 'use strict';
 
 /**

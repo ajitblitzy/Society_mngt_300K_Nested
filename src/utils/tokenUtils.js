@@ -1,3 +1,4 @@
+// tokenUtils.js - JWT sign and verify helpers around jsonwebtoken.
 'use strict';
 
 /**
