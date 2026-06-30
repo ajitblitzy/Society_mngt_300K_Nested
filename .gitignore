@@ -5,7 +5,7 @@
 #   - the authored documentation Markdown (docs/**/*.md),
 #   - the source trees (src/, tests/),
 #   - the consolidated PDF deliverable (docs/Society-Management-Documentation.pdf),
-#   - the dependency manifest and lockfile (package.json, package-lock.json),
+#   - the dependency manifest (package.json),
 #   - the delivered archive (society_mgmt_300k.zip).
 
 # Dependencies
