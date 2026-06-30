@@ -1,0 +1,361 @@
+// userRepository.js - In-memory user persistence (CommonJS; no DB/ORM; mirrors the scaffold's 'const store = []' idiom)
+'use strict';
+
+/**
+ * User repository (REPOSITORY layer) for the Society Management Login
+ * (authentication) feature.
+ *
+ * Responsibility (single, narrow): own the in-memory persistence of USER records
+ * and expose a small CRUD-style contract over a module-private store. It is the
+ * bottom of the Login dependency chain and the persistence contract that
+ * `src/services/authService.js` consumes:
+ *   - registration creates users (`create`),
+ *   - login reads credentials (`findByEmail`),
+ *   - lockout logic persists `failedAttempts` / `lockedUntil` (`update`), and
+ *   - a successful login resets those same fields (`update`).
+ *
+ * Architectural contract (must be preserved):
+ *   - In-memory ONLY. The canonical records live in a module-level
+ *     `const store = []`, mirroring the scaffold's idiom (AAP §0.4.1). There is
+ *     intentionally NO database, ORM, SQL, query builder, migration, or
+ *     file/network I/O here (AAP §0.6.2). The shape below is deliberately
+ *     swappable for a real persistence layer later — every access goes through a
+ *     function, never the raw array.
+ *   - PERSISTENCE concerns ONLY. This module stores, reads, and mutates records.
+ *     It contains NO business POLICY: credential verification, token issuance,
+ *     and lockout DECISIONS (thresholds, when to lock/unlock) all belong to
+ *     `src/services/authService.js`. The one DATA-INTEGRITY invariant it owns is
+ *     email uniqueness AT THE INSERTION BOUNDARY: `createUniqueByEmail` performs
+ *     an atomic (synchronous, await-free) duplicate-check + insert, so a
+ *     concurrent registration can never persist two records with the same email
+ *     — analogous to a database UNIQUE index. The HTTP semantics of a conflict
+ *     (status `409`, the client-facing message) remain `authService`'s decision;
+ *     the plain `create` below intentionally still does NOT enforce uniqueness.
+ *   - NEVER hashes. Passwords are hashed asynchronously by
+ *     `src/utils/passwordUtils.js` (via `authService`); this store only persists
+ *     the already-computed `passwordHash` (a string, or `null`). This file does
+ *     NOT import `bcryptjs`.
+ *   - Encapsulation. Every accessor returns shallow CLONES of stored records, so
+ *     a caller can never mutate shared module state through a returned value.
+ *   - Dependencies: the only internal imports are `../models/userModel` (for the
+ *     `createUser` record factory/normalizer) and `../domain/user` (for the
+ *     `ROLES` constants, used solely by `seedDefaultAdmin`). There are no
+ *     third-party libraries and no Node core I/O modules.
+ *
+ * @module repositories/userRepository
+ */
+
+const { createUser } = require('../models/userModel'); // canonical 9-field user-record factory/normalizer (never hashes)
+const { ROLES } = require('../domain/user');           // { ADMIN: 'admin', MEMBER: 'member' } — used only by seedDefaultAdmin
+
+/**
+ * Canonical, module-private user store.
+ *
+ * Holds the authoritative (mutable) user records. It is intentionally NOT
+ * exported: all access is funneled through the functions below so the store
+ * stays encapsulated and can be swapped for a real database later without
+ * changing the public contract.
+ *
+ * @type {Array<object>}
+ */
+const store = [];
+
+/**
+ * Produce a shallow copy of a stored record (or `null`).
+ *
+ * User records contain only primitive fields (strings, numbers, and `null`), so
+ * a shallow spread fully detaches the returned object from the canonical record.
+ * This is the mechanism that prevents callers from mutating shared module state
+ * through a returned value. Every function that returns a record returns a clone.
+ *
+ * @param {object|null|undefined} record A stored user record to copy.
+ * @returns {object|null} A new object with the same own enumerable properties,
+ *   or `null` when `record` is falsy.
+ */
+function clone(record) {
+  return record ? { ...record } : null;
+}
+
+/**
+ * Canonicalize an email for case-insensitive, whitespace-insensitive lookups.
+ *
+ * Mirrors the normalization performed by `userModel.createUser` so that values
+ * persisted by {@link create} and values supplied to {@link findByEmail} compare
+ * consistently. `null`/`undefined` collapse to the empty string (never throws).
+ *
+ * @param {*} email The raw email value to normalize.
+ * @returns {string} The trimmed, lower-cased string form of `email`.
+ */
+function normalizeEmail(email) {
+  return String(email == null ? '' : email).trim().toLowerCase();
+}
+
+/**
+ * Create and persist a new user record.
+ *
+ * The input is shaped through `userModel.createUser`, which guarantees the
+ * canonical nine-field record (lower-cased email, generated UUID `id` when
+ * absent, and defaulted `passwordHash`/`failedAttempts`/`lockedUntil`). Because
+ * `createUser` is idempotent, callers may pass either raw attributes or an
+ * already-shaped record. The shaped record is appended to the store and a CLONE
+ * is returned so the caller receives the persisted record (including its
+ * generated `id`) without holding a live reference into the store.
+ *
+ * This method deliberately does NOT enforce email uniqueness — callers that need
+ * a race-safe unique insert must use {@link createUniqueByEmail} instead (this is
+ * what `authService.register` does). `create` is retained for callers that have
+ * already established uniqueness by other means (such as the idempotent
+ * {@link seedDefaultAdmin}, which checks `findByEmail` first). It also NEVER
+ * hashes: `userInput.passwordHash` is expected to already be a bcrypt hash (or
+ * `null`).
+ *
+ * @param {object} userInput Raw user attributes (or an already-shaped record).
+ *   Must satisfy `userModel.createUser` (requires a non-empty `email`; `role`,
+ *   when supplied, must be a valid domain role).
+ * @returns {object} A clone of the persisted nine-field user record.
+ * @throws {Error} Propagates from `userModel.createUser` when `email` is missing
+ *   or a supplied `role` is invalid.
+ */
+function create(userInput) {
+  const record = createUser(userInput); // canonical 9-field shape; never hashes
+  store.push(record);
+  return clone(record);
+}
+
+/**
+ * Atomically create a user ONLY if its email is not already taken.
+ *
+ * This is the RACE-SAFE counterpart to {@link create} and the method
+ * `authService.register` uses to persist a new account. The input is shaped
+ * through `userModel.createUser` (which lower-cases/normalizes the email exactly
+ * as {@link findByEmail} does), then the duplicate check and the insert are
+ * performed in a SINGLE synchronous, await-free step.
+ *
+ * Why this is atomic: Node.js runs JavaScript on a single thread, so the
+ * `store.some(...)` duplicate scan and the subsequent `store.push(...)` below
+ * execute as one indivisible critical section — no other callback, microtask, or
+ * `await` continuation can interleave between them. Consequently, even if two
+ * concurrent registrations for the same email BOTH pass an earlier, non-atomic
+ * `findByEmail` fast-path AND both await password hashing, only the FIRST to
+ * reach this method can insert; the second observes the now-existing record and
+ * is rejected. This closes the check-then-act race that a bare `findByEmail`
+ * followed (after an `await`) by `create` would otherwise leave open.
+ *
+ * Persistence/policy boundary: this method enforces only the DATA-INTEGRITY
+ * invariant (no duplicate email in the store). It knows nothing about HTTP — on
+ * conflict it throws a plain `Error` tagged with `code === 'EMAIL_TAKEN'`, and
+ * the caller (`authService`) maps that to the feature's `409` envelope and
+ * client-facing message. Like {@link create}, it NEVER hashes.
+ *
+ * @param {object} userInput Raw user attributes (or an already-shaped record).
+ *   Must satisfy `userModel.createUser` (requires a non-empty `email`; `role`,
+ *   when supplied, must be a valid domain role). `passwordHash` is expected to be
+ *   an already-computed bcrypt hash (or `null`).
+ * @returns {object} A clone of the persisted nine-field user record.
+ * @throws {Error & { code: 'EMAIL_TAKEN' }} When a user with the same normalized
+ *   email already exists in the store.
+ * @throws {Error} Propagates from `userModel.createUser` when `email` is missing
+ *   or a supplied `role` is invalid.
+ */
+function createUniqueByEmail(userInput) {
+  // Shape first so the email is normalized identically to how it is stored and
+  // looked up (lower-cased + trimmed by `userModel.createUser`).
+  const record = createUser(userInput); // canonical 9-field shape; never hashes
+
+  // ATOMIC critical section — there is intentionally NO `await` between the
+  // duplicate scan and the push. Under Node's single-threaded event loop this
+  // scan-then-insert is indivisible, so two concurrent registrations for the same
+  // email cannot both pass the check and both insert.
+  if (store.some((u) => u.email === record.email)) {
+    const err = new Error('User with this email already exists');
+    err.code = 'EMAIL_TAKEN';
+    throw err;
+  }
+  store.push(record);
+  return clone(record);
+}
+
+/**
+ * Find a user by email, case-insensitively.
+ *
+ * The lookup key is normalized via {@link normalizeEmail}; an empty/blank email
+ * yields `null` without scanning the store. The returned clone contains the
+ * FULL record — including `passwordHash`, `failedAttempts`, and `lockedUntil` —
+ * because `authService` needs the hash to verify credentials and the lockout
+ * fields to enforce locking. Stripping sensitive fields for API responses is the
+ * job of `userModel.toPublicUser` (model/controller layer), NOT this repository.
+ *
+ * @param {string} email The email to look up (any casing / surrounding space).
+ * @returns {object|null} A clone of the matching full user record, or `null`
+ *   when no user matches (or `email` is empty/blank).
+ */
+function findByEmail(email) {
+  const target = normalizeEmail(email);
+  if (!target) {
+    return null;
+  }
+  return clone(store.find((u) => u.email === target));
+}
+
+/**
+ * Find a user by its unique `id`.
+ *
+ * @param {string} id The user id to look up.
+ * @returns {object|null} A clone of the matching full user record, or `null`
+ *   when `id` is `null`/`undefined` or no user matches.
+ */
+function findById(id) {
+  if (id == null) {
+    return null;
+  }
+  return clone(store.find((u) => u.id === id));
+}
+
+/**
+ * Apply a partial update to a stored user and persist it.
+ *
+ * Locates the canonical record by `id` and shallow-merges `changes` onto it. The
+ * record's immutable identity is protected (`id` can never be changed through
+ * this method) and `updatedAt` is always refreshed to the current time. This is
+ * the method `authService` uses to persist lockout bookkeeping — e.g.
+ * `{ failedAttempts, lockedUntil }` on failed attempts, and
+ * `{ failedAttempts: 0, lockedUntil: null }` to reset on a successful login.
+ *
+ * The canonical record is mutated in place (so subsequent lookups observe the
+ * change), and a CLONE of the updated record is returned to the caller.
+ *
+ * @param {string} id The id of the user to update.
+ * @param {object} [changes] Partial fields to merge. Any `id` property in
+ *   `changes` is ignored. A missing/`null` `changes` is treated as no field
+ *   changes (only `updatedAt` is refreshed).
+ * @returns {object|null} A clone of the updated record, or `null` when no user
+ *   with the given `id` exists.
+ */
+function update(id, changes) {
+  const record = store.find((u) => u.id === id);
+  if (!record) {
+    return null;
+  }
+  // Strip any attempt to change the immutable identity, then merge and always
+  // bump the audit timestamp. `id` is reasserted last so it can never drift.
+  const { id: _ignore, ...safeChanges } = changes || {};
+  Object.assign(record, safeChanges, {
+    id: record.id,
+    updatedAt: new Date().toISOString(),
+  });
+  return clone(record);
+}
+
+/**
+ * Return every stored user as an array of independent clones.
+ *
+ * A convenience read for administrative/reporting flows. Mutating the returned
+ * array (or any of its records) never affects the canonical store.
+ *
+ * @returns {Array<object>} A fresh array of cloned user records (empty when the
+ *   store is empty).
+ */
+function findAll() {
+  return store.map(clone);
+}
+
+/**
+ * Report how many users are currently stored.
+ *
+ * @returns {number} The number of records in the store.
+ */
+function count() {
+  return store.length;
+}
+
+/**
+ * Remove all users from the store.
+ *
+ * Primarily a test-isolation helper enabling deterministic Jest setup/teardown
+ * (AAP §0.5.2). Truncates the existing array in place (preserving the original
+ * reference) rather than reassigning it.
+ *
+ * @returns {void}
+ */
+function clear() {
+  store.length = 0;
+}
+
+/**
+ * Optionally seed a default administrator account (idempotent, async).
+ *
+ * This is the explicit, TRUSTED admin-provisioning path for the Login feature —
+ * the only sanctioned way to create an `admin` user. The generic
+ * `authService.register` API never assigns an elevated role, so administrators
+ * are created exclusively here, by trusted bootstrap/setup code.
+ *
+ * Hashing is CPU-bound and asynchronous, so it is delegated to a caller-supplied
+ * `hashFn` (e.g. `passwordUtils.hash`). This keeps the repository free of any
+ * password-hashing concern and free of a `bcryptjs` dependency. The operation is
+ * idempotent: if an admin with the resolved email already exists, the existing
+ * record (clone) is returned and no duplicate is created.
+ *
+ * SECURITY: the admin `password` MUST be supplied explicitly by the trusted
+ * caller (sourced from environment / secret management). There is intentionally
+ * NO default password — a missing or blank `options.password` throws, so this
+ * helper can never create an account with a known, hard-coded credential.
+ *
+ * IMPORTANT: this function is OPTIONAL and is NOT invoked at module load, by
+ * `src/app.js`, or by `src/server.js`. It exists so a future bootstrap/service
+ * can seed an administrator without modifying any existing files.
+ *
+ * @param {function(string): Promise<string>} hashFn Async function that maps a
+ *   plaintext password to its hash. REQUIRED.
+ * @param {object} options Admin attributes. REQUIRED, and MUST carry `password`.
+ * @param {string} options.password Plaintext admin password to hash. REQUIRED and
+ *   non-empty; sourced from secure configuration (never hard-coded).
+ * @param {string} [options.email='admin@society.local'] Admin login email.
+ * @param {string} [options.name='Society Administrator'] Admin display name.
+ * @returns {Promise<object>} A clone of the existing-or-newly-created admin
+ *   user record.
+ * @throws {Error} When `hashFn` is not a function, or when `options.password`
+ *   is missing/blank.
+ */
+async function seedDefaultAdmin(hashFn, options = {}) {
+  if (typeof hashFn !== 'function') {
+    throw new Error(
+      'userRepository.seedDefaultAdmin: an async hashFn(plaintext) is required'
+    );
+  }
+  // SECURITY: never embed a usable default credential in source. The admin
+  // password MUST be supplied explicitly by the trusted caller (sourced from
+  // environment / secret management). A missing or blank password is a hard
+  // error rather than a silent fallback, so no account is ever created with a
+  // known, hard-coded password.
+  const password = options.password;
+  if (typeof password !== 'string' || password.trim() === '') {
+    throw new Error(
+      'userRepository.seedDefaultAdmin: an explicit non-empty password is required ' +
+        '(provide options.password from secure configuration)'
+    );
+  }
+  const email = normalizeEmail(options.email || 'admin@society.local');
+  const existing = findByEmail(email);
+  if (existing) {
+    return existing;
+  }
+  const passwordHash = await hashFn(password);
+  return create({
+    email,
+    passwordHash,
+    role: ROLES.ADMIN,
+    name: options.name || 'Society Administrator',
+  });
+}
+
+module.exports = {
+  create,
+  createUniqueByEmail,
+  findByEmail,
+  findById,
+  update,
+  findAll,
+  count,
+  clear,
+  seedDefaultAdmin,
+};
