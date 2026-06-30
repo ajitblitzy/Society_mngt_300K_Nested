@@ -45,11 +45,11 @@ As a result, each module-identity file is a **self-contained** set of file-scope
 
 ## Repository & Layer Structure
 
-The diagram below mirrors the repository layout: the root holds the placeholder `README.md` and the delivered archive `society_mgmt_300k.zip`, whose extracted contents are the `src/` and `tests/` trees and the MIT `LICENSE/LICENSE.txt`. Each layer node is labeled with the module identities it groups.
+The diagram below mirrors the repository layout: the root holds the project overview `README.md` (the documentation hub) and the delivered archive `society_mgmt_300k.zip`, whose extracted contents are the `src/` and `tests/` trees and the MIT `LICENSE/LICENSE.txt`. Each layer node is labeled with the module identities it groups.
 
 ```mermaid
 graph TD
-    ROOT["Repository root"] --> RM["README.md (placeholder)"]
+    ROOT["Repository root"] --> RM["README.md (project overview & docs hub)"]
     ROOT --> ZIP["society_mgmt_300k.zip"]
     ZIP --> SRC["src/"]
     ZIP --> TST["tests/"]

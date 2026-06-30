@@ -1,48 +1,52 @@
 # Documentation Assets
 
-This directory holds **generated** visual assets for the Society Management documentation —
-specifically Mermaid diagrams pre-rendered to **SVG** so they embed reliably when the Markdown
-corpus is concatenated into the consolidated PDF. It is a **build-output location, not
-hand-authored artwork**: the diagrams are pre-rendered to SVG for the PDF by the documentation
-build, and the only file authored by hand here is this README.
+This directory holds the Mermaid **diagram sources** for the Society Management documentation and
+the **generated** SVG renderings produced from them. The `.mmd` source files are tracked in version
+control; the `.svg` files are build outputs — pre-rendered so they embed reliably when the Markdown
+corpus is concatenated into the consolidated PDF — and are **not** committed. The only prose authored
+by hand here is this README.
 
 ## Directory layout
 
 ```
 docs/assets/
-└── diagrams/        # Mermaid diagrams rendered to .svg by `mmdc` (generated; gitignored)
+└── diagrams/        # *.mmd Mermaid sources (tracked) → *.svg renderings by `mmdc` (generated; gitignored)
 ```
 
 ## How it is populated
 
 Running `npm run docs:diagrams` (part of the full `npm run docs:build`) invokes `mmdc` — the CLI
-from `@mermaid-js/mermaid-cli` — to render the authored Mermaid sources into
-`docs/assets/diagrams/<name>.svg`. Three diagrams are produced; each is authored as a Mermaid block
-inside an existing documentation page:
+from `@mermaid-js/mermaid-cli` — which walks `docs/` for `*.mmd` files and renders each one to a
+matching `docs/assets/diagrams/<name>.svg`. Three diagram sources live here, and each is also shown
+inline as a fenced Mermaid block in the documentation page that discusses it:
 
-| Diagram | Authored in | Rendered output |
-| --- | --- | --- |
-| Repository / layer structure | [`../architecture/overview.md`](../architecture/overview.md) | `diagrams/structure.svg` |
-| Per-layer module grouping | [`../api-reference/index.md`](../api-reference/index.md) | `diagrams/module-grouping.svg` |
-| Documentation build → PDF pipeline | [`../guides/pdf-export.md`](../guides/pdf-export.md) | `diagrams/build-pipeline.svg` |
+| Diagram | Mermaid source (tracked) | Rendered output (generated) | Also shown inline in |
+| --- | --- | --- | --- |
+| Repository / layer structure | `diagrams/structure.mmd` | `diagrams/structure.svg` | [`../architecture/overview.md`](../architecture/overview.md) |
+| Per-layer module grouping | `diagrams/module-grouping.mmd` | `diagrams/module-grouping.svg` | [`../api-reference/index.md`](../api-reference/index.md) |
+| Documentation build → PDF pipeline | `diagrams/build-pipeline.mmd` | `diagrams/build-pipeline.svg` | [`../guides/pdf-export.md`](../guides/pdf-export.md) |
 
-The `.svg` filenames above are illustrative of the rendered outputs.
+Because `mmdc` derives each output name from the source file name, `structure.mmd` produces
+`structure.svg`, `module-grouping.mmd` produces `module-grouping.svg`, and `build-pipeline.mmd`
+produces `build-pipeline.svg`.
 
-## Generated and gitignored
+## Tracked sources, generated SVGs
 
-> **The `diagrams/` directory is gitignored.** Its `.svg` contents are regenerated on every build,
-> so the rendered files are **not committed** to version control.
+> **The `*.mmd` sources are committed; the `*.svg` renderings are gitignored.** The SVGs are
+> regenerated on every build, so they are not stored in version control.
 
-- **Do not hand-create or commit `.svg` files** here — they are produced by `mmdc` at build time.
-- The empty `diagrams/` directory is kept present via a tracked **`.gitkeep`** placeholder so the
-  build always has a target; if a fresh checkout lacks it, the build (`mmdc`) recreates the directory.
+- **Edit diagrams in the `*.mmd` source files** (and keep the inline fenced Mermaid block on the
+  corresponding page in sync); do **not** hand-create or commit `*.svg` files — they are produced by
+  `mmdc` at build time.
+- The `diagrams/` directory is kept present via a tracked **`.gitkeep`** placeholder so the build
+  always has a target; the tracked `*.mmd` sources live alongside it.
 - **Do not place authored Markdown documentation pages in `docs/assets/`** — this directory is for
-  generated assets only, and this README is the sole explainer exception.
+  diagram sources and generated assets only, and this README is the sole explainer exception.
 
 ## Regeneration and consistency
 
-Because the diagrams are regenerated from their authored Mermaid sources on each build, they stay in
-sync with the verified project structure (28 module identities across 11 layers; a uniform synthetic
-function contract). See [`../getting-started/building-docs.md`](../getting-started/building-docs.md)
-to install the toolchain and run the build, and [`../guides/pdf-export.md`](../guides/pdf-export.md)
-for the full documentation build → PDF pipeline.
+Because the SVGs are regenerated from their `*.mmd` sources on each build, they stay in sync with the
+verified project structure (28 module identities across 11 layers; a uniform synthetic function
+contract). See [`../getting-started/building-docs.md`](../getting-started/building-docs.md) to install
+the toolchain and run the build, and [`../guides/pdf-export.md`](../guides/pdf-export.md) for the full
+documentation build → PDF pipeline.

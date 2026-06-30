@@ -29,7 +29,7 @@ The build is exposed as four npm scripts in the root `package.json`. The first t
 
 | Script | Command | What it does |
 | --- | --- | --- |
-| `docs:api` | `npm run docs:api` | Runs `jsdoc2md` (configured by `jsdoc.json`, source globs `src/**/*.js` and `tests/**/*.js`, `sourceType: "script"`) to generate one API reference table per module identity and write it into the matching page under `docs/api-reference/**/mod_*.md`. |
+| `docs:api` | `npm run docs:api` | Runs `jsdoc2md` (configured by `jsdoc.json`, source globs `src/**/*.js` and `tests/**/*.js`, `sourceType: "script"`) to generate one API reference table per module identity and inject it into the matching page under `docs/api-reference/**/mod_*.md`, between that page's `<!-- docs:api:START -->` and `<!-- docs:api:END -->` markers. The script fails loudly (errors) if a target page or its markers are missing. |
 | `docs:diagrams` | `npm run docs:diagrams` | Runs `mmdc` to render the authored Mermaid diagrams to SVG under [`../assets/diagrams/`](../assets/diagrams/) (i.e. `docs/assets/diagrams/`). |
 | `docs:pdf` | `npm run docs:pdf` | Runs `md-to-pdf` using `pdf.config.json` to concatenate the ordered Markdown corpus into [`../Society-Management-Documentation.pdf`](../Society-Management-Documentation.pdf) (i.e. `docs/Society-Management-Documentation.pdf`). |
 | `docs:build` | `npm run docs:build` | Orchestrates the three stages above **in strict order — `docs:api` → `docs:diagrams` → `docs:pdf`**. |

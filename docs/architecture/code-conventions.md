@@ -50,7 +50,7 @@ Equivalently: `mod_0_0(0) = 10`, `mod_0_0(1) = 16`, `mod_0_0(2) = 22`, and `mod_
 
 Each module file also declares `const store = [];` on line 2, immediately below the module-identity header (`// mod_N - society module`) on line 1. This array is **unused** by the synthetic functions — no function reads from or writes to it. See the [module taxonomy](./module-taxonomy.md) for the identity-header and file-shape details. *(Header: `Source: src/controllers/file_0.js:L1`; store: `Source: src/controllers/file_0.js:L2`.)*
 
-Source: `src/controllers/file_0.js:L3-L10`
+Source: `src/controllers/file_0.js:L3-L15`
 
 ## Adopted JSDoc Standard
 

@@ -51,7 +51,7 @@ function mod_0_0(x){
 }
 ```
 
-Source: src/controllers/file_0.js:L3-L10
+Source: src/controllers/file_0.js:L3-L15
 
 ## Applying the Convention
 
@@ -70,7 +70,7 @@ The convention is defined by the following rules, applied identically to all 33,
 
 ## How the Blocks Feed the API Reference
 
-These JSDoc blocks are the **input to `jsdoc-to-markdown` (`jsdoc2md`)**. The `npm run docs:api` script invokes `jsdoc2md` with the `jsdoc.json` configuration (source globs `src/**/*.js` and `tests/**/*.js`, `sourceType: "script"`) and writes the per-identity API reference tables under `docs/api-reference/**/mod_*.md`. Applying the rule therefore **directly feeds** the generated API reference rather than being a standalone task — the more uniformly the blocks are authored, the more consistent the generated tables.
+These JSDoc blocks are the **input to `jsdoc-to-markdown` (`jsdoc2md`)**. The `npm run docs:api` script invokes `jsdoc2md` with the `jsdoc.json` configuration (source globs `src/**/*.js` and `tests/**/*.js`, `sourceType: "script"`) and writes the per-identity API reference tables into each page under `docs/api-reference/**/mod_*.md`, replacing the content between that page's `<!-- docs:api:START -->` and `<!-- docs:api:END -->` markers (the script fails loudly if a page or its markers are missing). Applying the rule therefore **directly feeds** the generated API reference rather than being a standalone task — the more uniformly the blocks are authored, the more consistent the generated tables.
 
 For how to run the documentation build, see [Building the documentation](../getting-started/building-docs.md); for the full build-to-PDF pipeline, see [PDF export](pdf-export.md).
 

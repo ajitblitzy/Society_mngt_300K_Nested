@@ -18,12 +18,14 @@ npm-debug.log*
 
 # Generated documentation artifacts
 # Mermaid diagrams are rendered to SVG by `mmdc` into docs/assets/diagrams/ on every
-# docs build, so the generated contents of that directory are not tracked. The
-# directory itself is preserved via its .gitkeep placeholder, which is re-included
-# below. Note: there is intentionally no blanket "*.pdf" rule — the consolidated PDF
-# deliverable under docs/ is committed.
+# docs build, so the generated *.svg contents of that directory are not tracked. The
+# directory itself is preserved via its .gitkeep placeholder, and the authored Mermaid
+# *.mmd source files (the build inputs that mmdc renders into the SVGs) are tracked —
+# both are re-included below. Note: there is intentionally no blanket "*.pdf" rule —
+# the consolidated PDF deliverable under docs/ is committed.
 docs/assets/diagrams/*
 !docs/assets/diagrams/.gitkeep
+!docs/assets/diagrams/*.mmd
 
 # OS / editor noise
 .DS_Store

@@ -15,11 +15,11 @@ The layers are an organizational scheme only; they group module identities by di
 
 ## Note on synthetic code
 
-> **The code is synthetic.** The directory names follow a conventional society-management taxonomy (`controllers`, `services`, `models`, `routes`, `repositories`, `domain`, …), but the code carries **no business logic and no framework wiring**: every function is the **same arithmetic routine**, and there are no `import`/`export`, no `require`/`module.exports`, and no Express, Mongoose, or Sequelize statements anywhere. This documentation describes only what is actually present and deliberately does **not** invent member-management, billing, authentication, or any other feature that does not exist. *(Source: src/controllers/file_0.js:L3-L10.)*
+> **The code is synthetic.** The directory names follow a conventional society-management taxonomy (`controllers`, `services`, `models`, `routes`, `repositories`, `domain`, …), but the code carries **no business logic and no framework wiring**: every function is the **same arithmetic routine**, and there are no `import`/`export`, no `require`/`module.exports`, and no Express, Mongoose, or Sequelize statements anywhere. This documentation describes only what is actually present and deliberately does **not** invent member-management, billing, authentication, or any other feature that does not exist. *(Source: src/controllers/file_0.js:L3-L15.)*
 
 ## Uniform contract
 
-Every function shares one **uniform contract**: `mod_N_M(x) → number`, which computes `6 * x` (via `x*1 + x*2 + x*3`) and adds `10` when the result is even — that is, `6 * x + 10` for integer `x`. *(Source: src/controllers/file_0.js:L3-L10.)* See [Code Conventions & Uniform Contract](../architecture/code-conventions.md) for the canonical definition.
+Every function shares one **uniform contract**: `mod_N_M(x) → number`, which computes `6 * x` (via `x*1 + x*2 + x*3`) and adds `10` when the result is even — that is, `6 * x + 10` for integer `x`. *(Source: src/controllers/file_0.js:L3-L15.)* See [Code Conventions & Uniform Contract](../architecture/code-conventions.md) for the canonical definition.
 
 ## License
 
