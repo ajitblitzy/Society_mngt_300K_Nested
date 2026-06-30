@@ -86,6 +86,16 @@ Ajit-backprop-test/
 | Models / schemas | Pydantic v2 models in `src/<package>/models/` |
 | Tests (Jest / Mocha) | `pytest` suite under `tests/` |
 
+**Planned design patterns — dependency injection (PLANNED, not implemented today):** to keep
+collaborators **testable and loosely coupled**, the target wires them through **dependency
+injection** rather than constructing them inline. API handlers receive their collaborators via
+**FastAPI `Depends`** at the API boundary, while services, repositories, the `pydantic-settings`
+configuration object, and external clients (e.g. the `httpx` client and the async database
+session) are supplied through **constructor injection**. This complements the repository
+pattern, service layer, and settings object shown above, and — like the rest of this
+architecture — is the **planned/target** design that activates only once the JavaScript source
+is supplied; none of it is implemented in the repository today.
+
 ---
 
 ## Target Technology Stack (PLANNED)
