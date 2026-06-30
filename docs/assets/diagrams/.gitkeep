@@ -1,0 +1,1 @@
+# Placeholder so the generated Mermaid->SVG diagram output directory exists. SVGs here are produced by 'npm run docs:diagrams' (mmdc) and are gitignored — do not hand-create or commit .svg files.
