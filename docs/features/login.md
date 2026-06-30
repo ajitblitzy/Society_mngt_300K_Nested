@@ -22,7 +22,7 @@ a valid token issued here is what unlocks the reporting endpoints documented in
 ## Configuration
 
 All authentication settings are supplied through environment variables. They are loaded
-once at startup by [`dotenv`](https://www.npmjs.com/package/dotenv) and consumed by the
+once at startup by [`dotenv`](https://registry.npmjs.org/dotenv) and consumed by the
 authentication layer. Copy the committed template `.env.example` to a local `.env` and
 override the values for your environment.
 
@@ -172,7 +172,7 @@ login is required to read any report.
 
 ## Password Security
 
-Passwords are protected with [`bcryptjs`](https://www.npmjs.com/package/bcryptjs), a
+Passwords are protected with [`bcryptjs`](https://registry.npmjs.org/bcryptjs), a
 pure-JavaScript bcrypt implementation that requires no native build step.
 
 - **Hash-only storage.** A user's password is **only ever stored as a bcrypt hash** — the
