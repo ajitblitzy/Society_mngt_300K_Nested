@@ -1,6 +1,7 @@
 {
   "name": "society-management",
   "version": "1.0.0",
+  "private": true,
   "description": "Society Management backend API — Login (authentication) and Reporting features built on a layered Node.js/Express architecture.",
   "main": "src/server.js",
   "engines": {
