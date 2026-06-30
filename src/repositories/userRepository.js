@@ -22,9 +22,15 @@
  *     swappable for a real persistence layer later — every access goes through a
  *     function, never the raw array.
  *   - PERSISTENCE concerns ONLY. This module stores, reads, and mutates records.
- *     It contains NO business rules: email-uniqueness enforcement, credential
- *     verification, token issuance, and lockout DECISIONS (thresholds, when to
- *     lock/unlock) all belong to `src/services/authService.js`.
+ *     It contains NO business POLICY: credential verification, token issuance,
+ *     and lockout DECISIONS (thresholds, when to lock/unlock) all belong to
+ *     `src/services/authService.js`. The one DATA-INTEGRITY invariant it owns is
+ *     email uniqueness AT THE INSERTION BOUNDARY: `createUniqueByEmail` performs
+ *     an atomic (synchronous, await-free) duplicate-check + insert, so a
+ *     concurrent registration can never persist two records with the same email
+ *     — analogous to a database UNIQUE index. The HTTP semantics of a conflict
+ *     (status `409`, the client-facing message) remain `authService`'s decision;
+ *     the plain `create` below intentionally still does NOT enforce uniqueness.
  *   - NEVER hashes. Passwords are hashed asynchronously by
  *     `src/utils/passwordUtils.js` (via `authService`); this store only persists
  *     the already-computed `passwordHash` (a string, or `null`). This file does
@@ -95,10 +101,13 @@ function normalizeEmail(email) {
  * is returned so the caller receives the persisted record (including its
  * generated `id`) without holding a live reference into the store.
  *
- * This method deliberately does NOT enforce email uniqueness — that is a
- * business rule owned by `authService`, which calls {@link findByEmail} before
- * registering. It also NEVER hashes: `userInput.passwordHash` is expected to
- * already be a bcrypt hash (or `null`).
+ * This method deliberately does NOT enforce email uniqueness — callers that need
+ * a race-safe unique insert must use {@link createUniqueByEmail} instead (this is
+ * what `authService.register` does). `create` is retained for callers that have
+ * already established uniqueness by other means (such as the idempotent
+ * {@link seedDefaultAdmin}, which checks `findByEmail` first). It also NEVER
+ * hashes: `userInput.passwordHash` is expected to already be a bcrypt hash (or
+ * `null`).
  *
  * @param {object} userInput Raw user attributes (or an already-shaped record).
  *   Must satisfy `userModel.createUser` (requires a non-empty `email`; `role`,
@@ -109,6 +118,59 @@ function normalizeEmail(email) {
  */
 function create(userInput) {
   const record = createUser(userInput); // canonical 9-field shape; never hashes
+  store.push(record);
+  return clone(record);
+}
+
+/**
+ * Atomically create a user ONLY if its email is not already taken.
+ *
+ * This is the RACE-SAFE counterpart to {@link create} and the method
+ * `authService.register` uses to persist a new account. The input is shaped
+ * through `userModel.createUser` (which lower-cases/normalizes the email exactly
+ * as {@link findByEmail} does), then the duplicate check and the insert are
+ * performed in a SINGLE synchronous, await-free step.
+ *
+ * Why this is atomic: Node.js runs JavaScript on a single thread, so the
+ * `store.some(...)` duplicate scan and the subsequent `store.push(...)` below
+ * execute as one indivisible critical section — no other callback, microtask, or
+ * `await` continuation can interleave between them. Consequently, even if two
+ * concurrent registrations for the same email BOTH pass an earlier, non-atomic
+ * `findByEmail` fast-path AND both await password hashing, only the FIRST to
+ * reach this method can insert; the second observes the now-existing record and
+ * is rejected. This closes the check-then-act race that a bare `findByEmail`
+ * followed (after an `await`) by `create` would otherwise leave open.
+ *
+ * Persistence/policy boundary: this method enforces only the DATA-INTEGRITY
+ * invariant (no duplicate email in the store). It knows nothing about HTTP — on
+ * conflict it throws a plain `Error` tagged with `code === 'EMAIL_TAKEN'`, and
+ * the caller (`authService`) maps that to the feature's `409` envelope and
+ * client-facing message. Like {@link create}, it NEVER hashes.
+ *
+ * @param {object} userInput Raw user attributes (or an already-shaped record).
+ *   Must satisfy `userModel.createUser` (requires a non-empty `email`; `role`,
+ *   when supplied, must be a valid domain role). `passwordHash` is expected to be
+ *   an already-computed bcrypt hash (or `null`).
+ * @returns {object} A clone of the persisted nine-field user record.
+ * @throws {Error & { code: 'EMAIL_TAKEN' }} When a user with the same normalized
+ *   email already exists in the store.
+ * @throws {Error} Propagates from `userModel.createUser` when `email` is missing
+ *   or a supplied `role` is invalid.
+ */
+function createUniqueByEmail(userInput) {
+  // Shape first so the email is normalized identically to how it is stored and
+  // looked up (lower-cased + trimmed by `userModel.createUser`).
+  const record = createUser(userInput); // canonical 9-field shape; never hashes
+
+  // ATOMIC critical section — there is intentionally NO `await` between the
+  // duplicate scan and the push. Under Node's single-threaded event loop this
+  // scan-then-insert is indivisible, so two concurrent registrations for the same
+  // email cannot both pass the check and both insert.
+  if (store.some((u) => u.email === record.email)) {
+    const err = new Error('User with this email already exists');
+    err.code = 'EMAIL_TAKEN';
+    throw err;
+  }
   store.push(record);
   return clone(record);
 }
@@ -288,6 +350,7 @@ async function seedDefaultAdmin(hashFn, options = {}) {
 
 module.exports = {
   create,
+  createUniqueByEmail,
   findByEmail,
   findById,
   update,

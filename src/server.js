@@ -68,7 +68,6 @@ const server = app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT} (env: ${config.env})`);
   console.log('  - Auth endpoints   -> /api/auth');
   console.log('  - Report endpoints -> /api/reports');
-  console.log('  - Health check     -> /health');
 });
 
 // Surface bind-time failures (e.g. EADDRINUSE, EACCES) with a clear, actionable

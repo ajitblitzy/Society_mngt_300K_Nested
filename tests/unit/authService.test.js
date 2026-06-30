@@ -107,6 +107,36 @@ describe('authService', () => {
       expect(err.status).toBe(409);
     });
 
+    it('is concurrency-safe: two simultaneous registrations for the same email create exactly ONE account (one 409)', async () => {
+      // RACE-CONDITION REGRESSION (CP5 finding #3). Fire two registrations for the
+      // SAME email CONCURRENTLY. Both invocations run synchronously up to the
+      // `await` on bcrypt hashing, so BOTH pass the pre-hash fast-fail check while
+      // the store is still empty, and both then await hashing — exactly the
+      // interleaving that previously allowed two accounts. The repository's atomic
+      // `createUniqueByEmail` (a synchronous, await-free check+insert) must let
+      // only ONE win: we assert exactly one fulfilled result and one rejection
+      // carrying the duplicate-email 409, and that exactly one record persisted.
+      const email = 'race@example.com';
+      const results = await Promise.allSettled([
+        authService.register({ email, password: PASSWORD, name: 'A' }),
+        authService.register({ email, password: PASSWORD, name: 'B' }),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === 'fulfilled');
+      const rejected = results.filter((r) => r.status === 'rejected');
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+      // The loser is rejected with the duplicate-email 409 — never a 500 or a
+      // second successful create.
+      expect(rejected[0].reason.status).toBe(409);
+
+      // Data-integrity invariant: exactly ONE account exists for that email; no
+      // duplicate identity slipped into the in-memory store.
+      const matches = userRepository.findAll().filter((u) => u.email === email);
+      expect(matches).toHaveLength(1);
+      expect(userRepository.count()).toBe(1);
+    });
+
     it('rejects a weak (too short) password with status 400', async () => {
       const err = await catchError(
         authService.register({ email: 'weak@example.com', password: 'short' }),

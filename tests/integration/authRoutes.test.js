@@ -154,6 +154,29 @@ describe('POST /api/auth/register', () => {
     expect(res.status).toBe(409);
     expect(res.body.error).toBeDefined();
   });
+
+  it('is concurrency-safe: two simultaneous registrations for the same email yield one 201 and one 409', async () => {
+    // RACE-CONDITION REGRESSION (CP5 finding #3). Two CONCURRENT POST /register
+    // requests for the SAME email must produce exactly one created account (201)
+    // and one conflict (409) — never two 201s / duplicate identities. The atomic
+    // repository insert makes this outcome deterministic regardless of how the two
+    // in-flight requests interleave around password hashing.
+    const payload = { ...VALID_USER, name: 'Race' };
+    const [a, b] = await Promise.all([
+      request(app).post('/api/auth/register').send(payload),
+      request(app).post('/api/auth/register').send(payload),
+    ]);
+
+    // One success, one conflict (order-independent: compare the sorted statuses).
+    const statuses = [a.status, b.status].sort((x, y) => x - y);
+    expect(statuses).toEqual([201, 409]);
+
+    // Exactly one account was persisted for that email — no duplicate identity.
+    const matches = userRepository
+      .findAll()
+      .filter((u) => u.email === VALID_USER.email);
+    expect(matches).toHaveLength(1);
+  });
 });
 
 // ── POST /api/auth/login ──────────────────────────────────────────────────
@@ -235,5 +258,37 @@ describe('POST /api/auth/logout', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('Logged out successfully');
+  });
+});
+
+// ── Unmatched routes (uniform JSON 404 envelope) ────────────────────────────
+// Proves the API's documented uniform error contract `{ error: { message, status } }`
+// also covers requests that match NO route. The app-level 404 catch-all in
+// `src/app.js` synthesizes a 404 Error and forwards it to the centralized error
+// handler, so unknown paths return a JSON envelope (NOT Express's default HTML
+// 404 page). This is the regression test for the missing catch-all that previously
+// let unmatched paths fall through to an HTML response.
+describe('Unmatched routes', () => {
+  it('returns a JSON 404 envelope for an unknown path', async () => {
+    const res = await request(app).get('/api/unknown');
+
+    expect(res.status).toBe(404);
+    // The response must be JSON (the uniform envelope), never Express's HTML 404.
+    expect(res.headers['content-type']).toMatch(/application\/json/);
+    expect(res.body.error).toBeDefined();
+    expect(res.body.error.status).toBe(404);
+    expect(typeof res.body.error.message).toBe('string');
+    expect(res.body.error.message.length).toBeGreaterThan(0);
+  });
+
+  it('returns a JSON 404 envelope for an unknown method on a known base path', async () => {
+    // A method/path combination that no route declares must also produce the
+    // uniform JSON 404 (e.g. DELETE on the auth base path).
+    const res = await request(app).delete('/api/auth/nonexistent');
+
+    expect(res.status).toBe(404);
+    expect(res.headers['content-type']).toMatch(/application\/json/);
+    expect(res.body.error).toBeDefined();
+    expect(res.body.error.status).toBe(404);
   });
 });

@@ -29,11 +29,15 @@
  *   3. /api/auth router  — authentication endpoints (public + the guarded /me).
  *   4. /api/reports router — reporting endpoints (every route guarded by the auth
  *                            middleware inside that router — Reporting-depends-on-Login).
- *   5. /health (GET)     — trivial, unauthenticated liveness probe.
+ *   5. 404 catch-all     — any request that matched none of the routers above is
+ *                          converted into a 404 Error and forwarded to the error
+ *                          handler, so unknown paths return the SAME JSON envelope
+ *                          as every other error (never Express's default HTML 404).
  *   6. errorHandler      — centralized error -> JSON envelope; MUST be the LAST
  *                          `app.use(...)` so it catches errors thrown or forwarded
  *                          (Express 5 forwards rejected async-handler promises to it
- *                          automatically) by every preceding layer.
+ *                          automatically) by every preceding layer — including the
+ *                          404 produced by the catch-all in step 5.
  *
  * ── Module system & dependency boundary ────────────────────────────────────
  * CommonJS only (`require` / `module.exports`); no ESM `import`/`export`. The
@@ -58,10 +62,12 @@ const express = require('express');
 // once). It is intentionally required FIRST — before the routers/controllers/
 // services below — so that `process.env` is fully populated before any module in
 // the require graph reads an environment-derived value at load time. It never
-// binds a port or starts a server. The frozen object it exports exposes
-// `{ port, env, nodeEnv, jwt: { secret, expiresIn }, bcryptRounds }`; `config.env`
-// is surfaced on the `/health` response below.
-const config = require('./config');
+// binds a port or starts a server. This is a SIDE-EFFECT require (the returned
+// config object is not referenced directly in this file): the env-derived values
+// it exposes — `{ port, env, nodeEnv, jwt: { secret, expiresIn }, bcryptRounds }` —
+// are consumed by the services/middleware reached through the routers below, which
+// rely on this early load having already populated `process.env`.
+require('./config');
 
 // Per-request logging middleware — a function `(req, res, next)` that emits one
 // concise, secret-free access-log line after each response finishes. Installed
@@ -114,11 +120,17 @@ app.use('/api/auth', authRoutes);
 // Reporting-depends-on-Login prerequisite (AAP §0.4.1).
 app.use('/api/reports', reportRoutes);
 
-// (5) Lightweight, unauthenticated liveness probe. Useful for container/orchestrator
-// health checks and for confirming the app is wired and responding. It exposes only
-// a static status and the non-sensitive runtime environment label (never secrets).
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', env: config.env });
+// (5) 404 catch-all. Reached ONLY when no router/route above matched the request.
+// Express otherwise finalizes an unmatched request with its built-in HTML 404
+// page; here we instead synthesize a 404 Error and forward it to the centralized
+// error handler so unknown paths return the SAME `{ error: { message, status } }`
+// JSON envelope as every other error (API contract / uniform error envelope —
+// AAP §0.5.2). The message echoes only the request method and PATH (no query
+// string, body, or headers), so no secret is ever reflected back to the client.
+app.use((req, res, next) => {
+  const err = new Error(`Cannot ${req.method} ${req.path}`);
+  err.status = 404;
+  next(err);
 });
 
 // (6) Centralized error handler — MUST be the final `app.use(...)` registration so

@@ -116,7 +116,7 @@ any lockout fields):
 - `409 Conflict` — the email is already registered.
 
 ```json
-{ "error": { "message": "Email is already registered", "status": 409 } }
+{ "error": { "message": "Email already registered", "status": 409 } }
 ```
 
 ### POST /api/auth/login

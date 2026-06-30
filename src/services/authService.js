@@ -45,7 +45,7 @@
  * @module services/authService
  */
 
-const userRepository = require('../repositories/userRepository'); // { create, findByEmail, findById, update, findAll, count, clear, seedDefaultAdmin }
+const userRepository = require('../repositories/userRepository'); // { create, createUniqueByEmail, findByEmail, findById, update, findAll, count, clear, seedDefaultAdmin }
 const { toPublicUser } = require('../models/userModel');           // toPublicUser(user) -> { id, email, role, name, createdAt, updatedAt } | null
 const { DEFAULT_ROLE } = require('../domain/user');                // DEFAULT_ROLE = 'member' (public registration is ALWAYS this role)
 const passwordUtils = require('../utils/passwordUtils');           // async { hash(password, rounds), compare(password, hash) } — bcryptjs
@@ -177,10 +177,13 @@ function issueToken(user) {
 /**
  * Register a new user account.
  *
- * Validates the incoming request body, resolves the role securely, enforces
- * email uniqueness (the repository intentionally does not), hashes the password
- * with the async bcrypt API and the configured cost factor, persists the record,
- * and returns the sanitized public view (never the password hash).
+ * Validates the incoming request body, resolves the role securely, hashes the
+ * password with the async bcrypt API and the configured cost factor, then
+ * persists the record through the repository's ATOMIC unique-insert
+ * (`createUniqueByEmail`) so email uniqueness holds even under concurrent
+ * registrations, and returns the sanitized public view (never the password hash).
+ * A cheap `findByEmail` fast-fail rejects obvious duplicates before hashing, but
+ * the atomic insert is the authoritative, race-safe uniqueness guarantee.
  *
  * SECURITY — role assignment (privilege-escalation prevention): this generic,
  * public registration path ALWAYS assigns the least-privileged
@@ -233,8 +236,14 @@ async function register(input = {}) {
   // hashing function and an explicit password), never via this function.
   const resolvedRole = DEFAULT_ROLE;
 
-  // Uniqueness is THIS service's responsibility (the repository does not enforce
-  // it). The lookup is case-insensitive, matching how the record is stored.
+  // Fast-fail duplicate check BEFORE the CPU-bound bcrypt hash. This is a
+  // performance optimization for the common SEQUENTIAL case — it avoids hashing a
+  // password that is obviously going to conflict. It is NOT the authoritative
+  // guard: under CONCURRENT traffic two requests for the same email can both pass
+  // this check (neither has inserted yet) and both proceed to hash. The
+  // race-safe, authoritative uniqueness guarantee is enforced atomically by
+  // `userRepository.createUniqueByEmail` below. The lookup is case-insensitive,
+  // matching how the record is stored.
   if (userRepository.findByEmail(email)) {
     throw authError('Email already registered', 409);
   }
@@ -243,14 +252,28 @@ async function register(input = {}) {
   // plaintext password or the resulting hash.
   const passwordHash = await passwordUtils.hash(password, config.bcryptRounds);
 
-  // Persist via the repository (which shapes the canonical record internally and
-  // never hashes). Return only the sanitized public view.
-  const user = userRepository.create({
-    email,
-    passwordHash,
-    role: resolvedRole,
-    name,
-  });
+  // Persist via the repository's ATOMIC unique-insert. Even if a concurrent
+  // registration for the same email also passed the fast-fail check above and
+  // also awaited hashing, only ONE of them can win here: `createUniqueByEmail`
+  // runs its duplicate check and insert in a single synchronous (await-free)
+  // step, so the loser observes the winner's record and throws `EMAIL_TAKEN` —
+  // which we map to the SAME generic 409 as the sequential case. The repository
+  // shapes the canonical record internally and never hashes; we return only the
+  // sanitized public view.
+  let user;
+  try {
+    user = userRepository.createUniqueByEmail({
+      email,
+      passwordHash,
+      role: resolvedRole,
+      name,
+    });
+  } catch (err) {
+    if (err && err.code === 'EMAIL_TAKEN') {
+      throw authError('Email already registered', 409);
+    }
+    throw err;
+  }
   return toPublicUser(user);
 }
 
