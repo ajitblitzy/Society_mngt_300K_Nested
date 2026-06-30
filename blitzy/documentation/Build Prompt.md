@@ -1,1 +1,0 @@
-Scan the code and identify the security vulerability and highlight it with solution. Ensure the solution shared shall be efficient and shall not degrade the performance of the application.
