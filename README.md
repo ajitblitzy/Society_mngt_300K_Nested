@@ -77,11 +77,11 @@ in the **same repository**, applying the following changes:
   themselves `mod_N_K` binding modules.
 
 > **A note on "performance."** The functions are pure, constant-time (`O(1)`)
-> arithmetic — there are no loops, I/O, database, or network operations to
-> optimize. The performance improvement is therefore **structural**: eliminating
-> ~300,000 lines of duplicated and dead code and shipping a single, minimal,
-> idiomatic implementation. The per-call result is already computed in closed
-> form, so no algorithmic speedup is claimed or needed.
+> arithmetic — there are no loops or I/O to optimize. The performance
+> improvement is therefore **structural**: eliminating ~300,000 lines of
+> duplicated and dead code and shipping a single, minimal, idiomatic
+> implementation. The per-call result is already computed in closed form, so no
+> algorithmic speedup is claimed or needed.
 
 ### How the counts break down
 
@@ -227,10 +227,10 @@ The dev tools can alternatively be installed via the optional extra declared in
 pip install -e ".[dev]"
 ```
 
-> This project does **not** use Node.js, npm, a database, database migrations,
-> native shared libraries, or any external API. If a configuration surface is
-> ever added, any secrets must be read from environment variables and never
-> hardcoded — but no configuration is required by this library today.
+> This is a pure-Python library: the commands above are all that is required —
+> there is no separate build step to run. If a configuration surface is ever
+> added, any secrets must be read from environment variables and never
+> hardcoded; no configuration is required by this library today.
 
 ---
 
