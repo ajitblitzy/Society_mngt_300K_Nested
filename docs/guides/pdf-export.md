@@ -82,6 +82,40 @@ Because every page in the corpus begins with a single top-level heading (`#`), t
 
 The output path is exactly `docs/Society-Management-Documentation.pdf` — linked relatively from this page as [`../Society-Management-Documentation.pdf`](../Society-Management-Documentation.pdf).
 
+## Render performance and CI guidance
+
+The consolidated PDF is large because the corpus is large: the 28 per-identity API
+reference pages contribute one table row per documented function — **33,105 rows in
+total** (1,200 per module for 27 of the 28 identities, plus 705 for `mod_27`) — which
+renders to a roughly **1,217-page, ~37 MB** A4 PDF. The toolchain itself is fast on
+ordinary input (an isolated `md-to-pdf` render of a small page completes in a couple of
+seconds, and `docs:diagrams` renders all three diagrams in a few seconds); the time and
+memory cost of `docs:pdf` is therefore **volume-driven**, dominated by laying out tens of
+thousands of table rows in headless Chromium. Expect `docs:pdf` to run for **several
+minutes** and to need a few hundred MB of additional memory for the browser process.
+
+Two settings keep this volume-driven render from being aborted prematurely:
+
+- **No protocol timeout.** `pdf.config.json` sets `launch_options.protocolTimeout: 0`,
+  which disables Puppeteer's default **180 s** per-CDP-call timeout. Without it, the single
+  long `Page.printToPDF` call that produces the whole document would be killed after three
+  minutes with a `… timed out. Increase the 'protocolTimeout' setting …` error even though
+  the render is progressing normally; `0` removes the cap. (The page-level font-wait
+  `timeout` inside `pdf_options` is intentionally left at its default and **not** set to
+  `0`, because for `page.pdf()` a `0` there triggers an immediate timeout rather than
+  disabling it.)
+- **Fail-loud, leak-free temp handling.** `docs:pdf` writes the concatenated corpus to
+  `docs/.combined.md`, renders it, and removes it in a `finally` block, so the temp is
+  cleaned up whether the render succeeds or throws. `docs/.combined.md` is also gitignored,
+  so an interrupted run never leaves a stray, untracked file behind.
+
+**For CI:** give the documentation job a generous wall-clock timeout (well above the
+observed multi-minute render — do **not** wrap `docs:build` in a tight per-step timeout),
+ensure the runner has enough memory for headless Chromium on top of Node, and invoke the
+pipeline via `npm run docs:build` so the `&&` chain still fails loudly if any step errors.
+If a runner imposes a hard ceiling the full render cannot meet, build on a larger runner
+rather than reducing the documented content.
+
 ## Fixed assembly order
 
 The order in which the Markdown pages are concatenated into the PDF is fixed by the `documents` array in `pdf.config.json`. The corpus is assembled in exactly this order:

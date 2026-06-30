@@ -29,3 +29,9 @@ docs/assets/diagrams/*
 
 # OS / editor noise
 .DS_Store
+
+# Build temp
+# docs:pdf concatenates the ordered Markdown into this temp file before md-to-pdf
+# renders it; a try/finally removes it on success or failure. Ignored as defense
+# against a hard kill (e.g. SIGKILL) where the finally cannot run.
+docs/.combined.md
