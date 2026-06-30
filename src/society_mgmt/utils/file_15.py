@@ -9,15 +9,10 @@ importable and callable. ``utils`` is a structural label only and holds no
 utility behavior (none existed in the source).
 """
 
-from collections.abc import Callable
-
 from society_mgmt.core import society_compute
 
-# Signature shared by every generated binding: a pure numeric-domain callable.
-_NumberFn = Callable[[int | float], int | float]
 
-
-def _make_binding(name: str) -> _NumberFn:
+def _make_binding(name: str):
     """Build a name-preserving wrapper that delegates to ``society_compute``.
 
     The returned callable forwards its argument unchanged to the single

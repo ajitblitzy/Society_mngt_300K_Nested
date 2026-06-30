@@ -9,14 +9,10 @@ unused ``const store = []`` from the source is intentionally dropped
 (dead-code elimination).
 """
 
-from collections.abc import Callable
-
 from society_mgmt.core import society_compute
 
-__all__ = [f"mod_8_{_i}" for _i in range(1200)]
 
-
-def _make_binding(name: str) -> Callable[[int | float], int | float]:
+def _make_binding(name: str):
     """Return a thin wrapper delegating to society_compute, named *name*."""
 
     def _binding(x: int | float) -> int | float:
