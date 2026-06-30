@@ -17,26 +17,20 @@ delivers:
 - the single canonical implementation, `society_compute(x)`, in
   `src/society_mgmt/core.py`;
 - the `src`-layout package — the `society_mgmt` package, its nine layer
-  sub-packages, the two test-source binding packages (`tests_unit`,
-  `tests_integration`), and the top-level `tests` package tree;
+  sub-packages, and the top-level `tests` package tree;
 - the **name-preserving `mod_N_K` binding modules**
-  (`src/society_mgmt/<package>/file_*.py`) — all **33,105** bindings across the
-  28 source modules, each delegating to
-  `society_compute` (see **Overview — what changed** for how these numbers are
-  derived);
+  (`src/society_mgmt/<layer>/file_*.py`) — all **28,305** bindings across the
+  24 production source modules, each delegating to `society_compute` (see
+  **Overview — what changed** for how these numbers are derived);
 - project packaging and tooling configuration: `pyproject.toml`,
   `requirements.txt`, `.gitignore`, and `LICENSE`; and
 - the genuine `pytest` equivalence test suite. The four JavaScript
-  *test-source* modules are also implemented as real pytest tests —
+  *test-source* modules are re-authored as real pytest tests —
   `tests/unit/file_9.js` → `tests/unit/test_file_9.py`,
   `tests/unit/file_20.js` → `tests/unit/test_file_20.py`,
   `tests/integration/file_10.js` → `tests/integration/test_file_10.py`, and
   `tests/integration/file_21.js` → `tests/integration/test_file_21.py`. The
-  suite contains **287 tests, all passing**. To preserve the full public API,
-  these four modules' `mod_N_K` names are *also* re-exposed as name-preserving
-  binding modules (under `tests_unit/` and `tests_integration/`) — so every
-  original name stays importable while its behavior is proven by genuine tests
-  (see **Overview — what changed**).
+  suite contains **276 tests, all passing**.
 
 ---
 
@@ -57,25 +51,21 @@ in the **same repository**, applying the following changes:
   single canonical function, `society_compute(x)`, in
   `src/society_mgmt/core.py`. This removes roughly **300,000 lines** of
   duplicated and dead code.
-- **API preservation.** Every original `mod_N_K` name from **all 28 source
-  modules** is retained as a thin, name-preserving binding that delegates to
-  `society_compute`, so every public function remains importable and returns
-  identical values. This is **33,105** bindings in total
-  — see **How the counts break down** below. (The four JavaScript *test-source*
-  modules are re-exposed as bindings *and* additionally covered by genuine
-  pytest tests; see the **Real tests** bullet.)
+- **API preservation.** Every original `mod_N_K` name from the **24 production
+  source modules** is retained as a thin, name-preserving binding that
+  delegates to `society_compute`, so every public function remains importable
+  and returns identical values. This is **28,305** bindings in total — see
+  **How the counts break down** below.
 - **Dead-code elimination.** The comment-only padding file (`filler.js`) and the
   unused `const store = []` declaration in every module are dropped — they are
   not carried into the Python package.
 - **Real tests.** The four JavaScript *test-source* modules (`file_9`,
   `file_20` in `tests/unit/`; `file_10`, `file_21` in `tests/integration/`)
   contained no assertions; their behavior is now proven by genuine `pytest`
-  equivalence tests under `tests/`. That suite now exists and its **287 tests
-  all pass**. Because the O1 contract requires *every* original name to remain
-  callable, these four modules' `mod_N_K` names are *also* re-exposed as
-  name-preserving binding modules (under `src/society_mgmt/tests_unit/` and
-  `src/society_mgmt/tests_integration/`), so they remain part of the importable
-  public surface in addition to being exercised by the real tests.
+  equivalence tests under `tests/`. That suite now exists and its **276 tests
+  all pass**. These four modules are migrated to real tests rather than to
+  importable binding modules, so they are **not** part of the package's
+  `mod_N_K` binding surface.
 
 > **A note on "performance."** The functions are pure, constant-time (`O(1)`)
 > arithmetic — there are no loops or I/O to optimize. The performance
@@ -86,25 +76,22 @@ in the **same repository**, applying the following changes:
 
 ### How the counts break down
 
-The original archive contained **33,105** `mod_N_K` functions across **all 28**
-JavaScript module files. Every one of them is re-exposed as a name-preserving
-binding; the 28 files fall into two groups that differ only in *where* their
-bindings live and whether they are additionally exercised by tests:
+The original archive contained **33,105** `mod_N_K` functions across **28**
+JavaScript module files. They fall into two groups that are treated
+differently in the Python package:
 
 | Group | Source files | Functions | Becomes |
 |-------|--------------|-----------|---------|
 | Production modules (nine layers) | 24 files | **28,305** | Name-preserving binding modules under `src/society_mgmt/<layer>/` |
-| Test-source modules | 4 files — `file_9`, `file_20` (unit); `file_10`, `file_21` (integration) | **4,800** | Name-preserving binding modules under `src/society_mgmt/tests_unit/` and `src/society_mgmt/tests_integration/`, **and** genuine `pytest` equivalence tests under `tests/` |
+| Test-source modules | 4 files — `file_9`, `file_20` (unit); `file_10`, `file_21` (integration) | 4,800 | Genuine `pytest` equivalence tests under `tests/` (**not** package binding modules) |
 
-So the importable, name-preserving public surface is the full **33,105**
-bindings — every `mod_N_K` name from all 28 source modules. The 4,800 functions
-from the four test-source modules are *both* re-exposed as callable bindings
-(preserving the public surface) *and* migrated as real `pytest` assertions (so
-behavior is proven). (`filler.js` contributes no functions and is dropped.) The
-per-package binding counts are: `controllers`, `services`, `models`, `routes`,
-and `utils` = 3,600 each; `middleware` = 3,105 (`file_27` has 705); `config`,
-`repositories`, and `domain` = 2,400 each; and the two test-source packages
-`tests_unit` and `tests_integration` = 2,400 each.
+So the importable, name-preserving public surface is the **28,305** bindings
+from the 24 production modules. The 4,800 functions from the four test-source
+modules are migrated as real `pytest` assertions (so behavior is proven) rather
+than re-exposed as importable bindings. (`filler.js` contributes no functions
+and is dropped.) The per-package binding counts are: `controllers`, `services`,
+`models`, `routes`, and `utils` = 3,600 each; `middleware` = 3,105 (`file_27`
+has 705); and `config`, `repositories`, and `domain` = 2,400 each.
 
 ### The function contract
 
@@ -133,10 +120,9 @@ data-access, routing, or configuration behavior, because none existed in the
 source to preserve.
 
 **Layout.** The canonical implementation lives in `core.py`; every layer
-sub-package — plus the two test-source binding packages `tests_unit` and
-`tests_integration` — contains its name-preserving `mod_N_K` binding modules,
-and the top-level `tests/` tree holds the genuine `pytest` equivalence suite
-alongside its package markers:
+sub-package contains its name-preserving `mod_N_K` binding modules, and the
+top-level `tests/` tree holds the genuine `pytest` equivalence suite alongside
+its package markers:
 
 ```
 .
@@ -157,13 +143,11 @@ alongside its package markers:
 │       ├── middleware/         # __init__.py + file_5.py, file_16.py, file_27.py
 │       ├── config/             # __init__.py + file_6.py, file_17.py
 │       ├── repositories/       # __init__.py + file_7.py, file_18.py
-│       ├── domain/             # __init__.py + file_8.py, file_19.py
-│       ├── tests_unit/         # __init__.py + file_9.py, file_20.py   (mod_N_K bindings)
-│       └── tests_integration/  # __init__.py + file_10.py, file_21.py  (mod_N_K bindings)
+│       └── domain/             # __init__.py + file_8.py, file_19.py
 └── tests/
     ├── __init__.py
     ├── unit/                   # __init__.py + test_file_9.py, test_file_20.py
-    └── integration/            # __init__.py + test_file_10.py, test_file_21.py, test_name_parity.py
+    └── integration/            # __init__.py + test_file_10.py, test_file_21.py
 ```
 
 Each per-layer module imports the canonical implementation and re-exposes its
@@ -254,16 +238,15 @@ from society_mgmt import society_compute
 society_compute(2)   # -> 22
 ```
 
-Every original `mod_N_K` name — all **33,105** across the 28 source modules —
-is importable and returns the same value as `society_compute`. A production-layer
-binding and a test-source binding both work the same way:
+Every original `mod_N_K` name — all **28,305** across the 24 production
+modules — is importable and returns the same value as `society_compute`:
 
 ```python
 from society_mgmt.controllers import file_0
-from society_mgmt.tests_unit import file_9
+from society_mgmt.middleware import file_27
 
-file_0.mod_0_0(2)    # -> 22  (name-preserving binding delegates to society_compute)
-file_9.mod_9_0(2)    # -> 22  (test-source name preserved as a binding too)
+file_0.mod_0_0(2)        # -> 22  (name-preserving binding delegates to society_compute)
+file_27.mod_27_704(2)    # -> 22  (file_27 is the 705-function boundary module)
 ```
 
 ---
@@ -276,23 +259,25 @@ required.
 
 The genuine `pytest` equivalence suite — unit tests in `tests/unit/`
 (`test_file_9.py`, `test_file_20.py`) and cross-module parity tests in
-`tests/integration/` (`test_file_10.py`, `test_file_21.py`, and the
-archive-vs-runtime name-parity guard `test_name_parity.py`) — proves behavioral
-parity with the original JavaScript contract and that all 33,105 public names
-remain importable. Run the full suite (**287 tests**) from the repository root
+`tests/integration/` (`test_file_10.py`, `test_file_21.py`) — proves behavioral
+parity with the original JavaScript contract and that the 28,305 public names
+remain importable. Run the full suite (**276 tests**) from the repository root
 with:
 
 ```bash
 pytest
 ```
 
-Linting and formatting with `ruff` work today and can be run from the
-repository root:
+Linting and formatting with `ruff` can be run from the repository root. The
+check commands are non-mutating and must report success:
 
 ```bash
-ruff check .
-ruff format .
+ruff check .            # lint; prints "All checks passed!"
+ruff format --check .   # verify formatting without modifying files
 ```
+
+(`ruff format .` — without `--check` — reformats files in place if you want
+`ruff` to apply formatting changes rather than just verify them.)
 
 ---
 

@@ -23,6 +23,11 @@ where = ["src"]
 [tool.ruff]
 line-length = 88
 target-version = "py314"
+# Exclude the platform "blitzy/" tree (generated documentation and QA-evidence
+# artifacts) from linting/formatting. It is tooling output, not part of the
+# deliverable Python package, so `ruff check .` / `ruff format --check .` run
+# from the repository root only inspect project source under src/ and tests/.
+extend-exclude = ["blitzy"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W", "UP", "B"]

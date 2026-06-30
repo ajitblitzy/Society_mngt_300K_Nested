@@ -21,3 +21,6 @@ dist/
 .coverage
 .coverage.*
 htmlcov/
+
+# Platform-generated QA evidence artifacts (not part of the project source)
+blitzy/qa_evidence/
